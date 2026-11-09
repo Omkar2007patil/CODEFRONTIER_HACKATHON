@@ -178,7 +178,7 @@ export default function CyberMatrixBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-80"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-55"
       style={{ background: 'transparent' }}
     />
   )

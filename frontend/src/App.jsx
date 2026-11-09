@@ -8,6 +8,7 @@ import TeamPortfolio from './components/TeamPortfolio'
 import LandingHero from './components/LandingHero'
 import CustomIngestModal from './components/CustomIngestModal'
 import JudgeTourModal from './components/JudgeTourModal'
+import BentoMetricsBar from './components/BentoMetricsBar'
 import {
   generateHandoverMarkdown,
   generateHandoverAuditJson,
@@ -452,6 +453,7 @@ export default function App() {
     if (!project || !project.claims) return []
     return project.claims.filter((c) => {
       if (selectedCategoryFilter === 'all') return true
+      if (selectedCategoryFilter === 'approved') return c.is_approved
       if (selectedCategoryFilter === 'conflicts') return c.status === 'conflicting'
       if (selectedCategoryFilter === 'pending') return !c.is_approved
       if (selectedCategoryFilter === 'sensitive') return c.is_sensitive
@@ -527,7 +529,7 @@ export default function App() {
           />
 
           {/* Body Workspace */}
-          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             {/* Loading Indicator */}
             {loading && (
               <div className="py-28 text-center text-neutral-500 space-y-3 font-mono">
@@ -568,11 +570,18 @@ export default function App() {
               <>
                 {/* REVIEWER / LEAD MODE */}
                 {role === 'lead' && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
+                    {/* Modern Bento HUD Metrics Bar */}
+                    <BentoMetricsBar
+                      stats={stats}
+                      selectedCategoryFilter={selectedCategoryFilter}
+                      onSelectFilter={(filterId) => setSelectedCategoryFilter(filterId)}
+                    />
+
                     {/* Executive Synthesis Tactical Glass Panel */}
-                    <div className="p-5 sm:p-6 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 hover:border-cyan-400/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-5 relative corner-crosshair">
-                      <div className="space-y-1.5 max-w-3xl">
-                        <div className="flex items-center gap-2 text-xs font-mono tracking-[0.18em] text-cyan-400 uppercase font-bold">
+                    <div className="p-6 sm:p-7 rounded-2xl bg-[#0c0d14]/75 backdrop-blur-xl border border-white/10 hover:border-cyan-400/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative shadow-lg">
+                      <div className="space-y-2 max-w-3xl">
+                        <div className="flex items-center gap-2.5 text-xs font-mono tracking-[0.18em] text-cyan-400 uppercase font-bold">
                           <span>// 01. RECONSTRUCTION_SYNTHESIS</span>
                           <span className="text-neutral-700">&bull;</span>
                           <span className="text-neutral-400">
@@ -588,18 +597,18 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleApproveAll}
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black border border-emerald-500/40 text-emerald-300 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(52,211,153,0.3)] text-xs font-mono tracking-[0.18em] uppercase font-bold transition active:scale-95"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black/90 border border-emerald-500/40 text-emerald-300 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(52,211,153,0.3)] text-xs font-mono tracking-[0.18em] uppercase font-bold transition active:scale-95"
                         >
-                          <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                          <CheckCheck className="w-4 h-4 text-emerald-400" />
                           <span>[ BATCH_APPROVE_ALL ]</span>
                         </button>
                       </div>
                     </div>
 
-                    {/* Two-Column Wireframe Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Two-Column Split Workspace */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
                       {/* LEFT PANEL: Source Preview & Evidence Anchors (5 cols) */}
-                      <div className="lg:col-span-5 h-[760px] sticky top-28">
+                      <div className="lg:col-span-5 h-[800px] sticky top-24">
                         <SourceViewer
                           rawSources={project.raw_sources}
                           activeSourceIndex={activeSourceIndex}
@@ -611,11 +620,11 @@ export default function App() {
                       </div>
 
                       {/* RIGHT PANEL: Claims & Human Review Stream (7 cols) */}
-                      <div className="lg:col-span-7 space-y-4">
+                      <div className="lg:col-span-7 space-y-5">
                         {/* Active Theory Tactical Filter Bar */}
-                        <div className="bg-black/70 backdrop-blur-xl p-2 rounded-xl border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs">
+                        <div className="bg-[#0c0d14]/80 backdrop-blur-xl p-2 rounded-xl border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs shadow-md">
                           <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 font-mono text-xs tracking-[0.18em]">
-                            <span className="text-neutral-500 px-2 uppercase">
+                            <span className="text-neutral-500 px-2 uppercase text-[10px] font-bold">
                               // FILTER:
                             </span>
 
@@ -635,7 +644,7 @@ export default function App() {
                                 className={`px-3 py-1.5 rounded-lg font-bold uppercase transition shrink-0 ${
                                   selectedCategoryFilter === tab.id
                                     ? 'bg-[#00f0ff]/15 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]'
-                                    : 'text-neutral-500 hover:text-neutral-200 hover:bg-white/[0.04]'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.04]'
                                 }`}
                               >
                                 {tab.label}
@@ -643,7 +652,7 @@ export default function App() {
                             ))}
                           </div>
 
-                          <span className="text-xs text-neutral-500 font-mono hidden sm:inline px-2 shrink-0 tracking-[0.18em]">
+                          <span className="text-xs text-neutral-500 font-mono hidden sm:inline px-2.5 shrink-0 tracking-[0.18em] font-bold">
                             [{filteredClaims.length}_ITEMS]
                           </span>
                         </div>
@@ -651,7 +660,7 @@ export default function App() {
                         {/* Claims Stream Cards */}
                         <div className="space-y-4">
                           {filteredClaims.length === 0 ? (
-                            <div className="p-12 rounded-2xl bg-black/40 border border-white/5 text-center text-neutral-600 text-xs font-mono tracking-widest uppercase">
+                            <div className="p-16 rounded-2xl bg-[#0c0d14]/50 border border-white/5 text-center text-neutral-500 text-xs font-mono tracking-widest uppercase">
                               // NO_MATCHING_CLAIMS_FOR_CRITERIA
                             </div>
                           ) : (
