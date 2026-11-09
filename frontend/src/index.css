@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-void: #000000;
+    --color-cyan-glow: #00f0ff;
+    --color-rose-glow: #ff007f;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, sans-serif;
+    background-color: #000000;
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+
+  /* Active Theory Minimalist WebKit Scrollbar */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #18181b;
+    border-radius: 0px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00f0ff;
+    box-shadow: 0 0 8px #00f0ff;
+  }
+}
+
+/* Active Theory Wireframe & Tactical Glass Surfaces */
+.at-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.at-panel {
+  background: rgba(4, 5, 8, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.at-panel:hover {
+  border-color: rgba(0, 240, 255, 0.35);
+}
+
+.at-panel-rose {
+  background: rgba(10, 2, 7, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 0, 127, 0.35);
+  box-shadow: 0 0 30px -5px rgba(255, 0, 127, 0.18);
+}
+
+/* Tactical Corner Crosshairs */
+.corner-crosshair::before {
+  content: '+';
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.corner-crosshair::after {
+  content: '+';
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+/* Glow Utilities */
+.at-glow-cyan {
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.35);
+}
+
+.at-glow-rose {
+  box-shadow: 0 0 24px rgba(255, 0, 127, 0.35);
+}
+
+@keyframes atFloatAura {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.12;
+  }
+  50% {
+    transform: translate(-15px, 10px) scale(1.05);
+    opacity: 0.18;
+  }
+}
+
+.animate-at-aura {
+  animation: atFloatAura 12s ease-in-out infinite;
+}
+
+/* Active Theory Laser Radar Scanline */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh);
+    opacity: 0;
+  }
+}
+
+.animate-scanline {
+  animation: scanline 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Active Theory Breathing Neon Glow */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.18), inset 0 0 10px rgba(0, 240, 255, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(0, 240, 255, 0.35), inset 0 0 18px rgba(0, 240, 255, 0.15);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neonPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes rosePulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 0, 127, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 0, 127, 0.38);
+  }
+}
+
+.animate-rose-pulse {
+  animation: rosePulse 3s ease-in-out infinite;
+}
+
+/* Staggered Fade In Up Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
