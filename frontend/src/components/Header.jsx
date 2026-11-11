@@ -15,15 +15,17 @@ import {
   MoreVertical,
   Users,
   CheckCircle2,
+  Server,
+  Radio,
 } from 'lucide-react'
 
 /**
  * Header Component
  * Streamlined minimal dark glass header adhering to Active Theory design standards.
  * Three logical zones:
- * - Left: "APEX HANDOVER" with glowing cyan status dot & project badge
+ * - Left: "APEX HANDOVER" with glowing status dot & project badge
  * - Center: Clean Segmented Pill toggle between [Reviewer Mode] and [Successor View]
- * - Right: Action cluster with [⚡ 60s Tour], Preset Dropdown, [+ Ingest], and Actions dropdown (Export MD, Audit JSON, Reset, Lock, Dossier)
+ * - Right: Action cluster with [⚡ 60s Tour], Preset Dropdown, [+ Ingest], and Actions dropdown
  */
 export default function Header({
   project,
@@ -39,6 +41,8 @@ export default function Header({
   onBackToLanding,
   onOpenIngest,
   onStartTour,
+  onRetryBackend,
+  isConnectingBackend,
   stats,
   isResetting,
 }) {
@@ -87,12 +91,22 @@ export default function Header({
             <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2">
                 <span
-                  className={`w-2 h-2 rounded-full ${
+                  className={`w-2 h-2 rounded-full transition-all ${
                     healthStatus === 'Online'
                       ? 'bg-[#00f0ff] shadow-[0_0_8px_#00f0ff] animate-pulse'
+                      : healthStatus === 'Standalone' || healthStatus === 'Demo'
+                      ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
+                      : healthStatus === 'Checking...'
+                      ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-ping'
                       : 'bg-[#ff007f] shadow-[0_0_8px_#ff007f]'
                   }`}
-                  title={healthStatus === 'Online' ? 'Backend Live' : 'Backend Offline'}
+                  title={
+                    healthStatus === 'Online'
+                      ? 'Connected to FastAPI Backend (Port 8000)'
+                      : healthStatus === 'Standalone' || healthStatus === 'Demo'
+                      ? 'Standalone Client Engine (Zero Backend Required)'
+                      : healthStatus
+                  }
                 />
                 <span className="font-heading font-black text-base sm:text-lg tracking-tight uppercase text-white flex items-center gap-1.5">
                   <span className="text-white">APEX</span>
@@ -104,7 +118,21 @@ export default function Header({
 
               {/* Status & Project Pill */}
               <div className="hidden md:flex items-center gap-2 text-[10px] font-mono tracking-[0.18em]">
-                <span className="text-cyan-400/80 font-semibold">// SYS_ONLINE</span>
+                <span
+                  className={`font-semibold ${
+                    healthStatus === 'Online'
+                      ? 'text-cyan-400/90'
+                      : healthStatus === 'Standalone' || healthStatus === 'Demo'
+                      ? 'text-emerald-400/90'
+                      : 'text-amber-400/90'
+                  }`}
+                >
+                  {healthStatus === 'Online'
+                    ? '// SYS_LIVE_API'
+                    : healthStatus === 'Standalone' || healthStatus === 'Demo'
+                    ? '// SYS_DEMO_LIVE'
+                    : '// PROBING_BACKEND...'}
+                </span>
                 {project?.project_name && (
                   <>
                     <span className="text-neutral-700">&bull;</span>
@@ -220,7 +248,38 @@ export default function Header({
 
               {/* Dropdown Popover */}
               {isActionsOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-[#0c0d14]/95 backdrop-blur-2xl border border-white/15 shadow-[0_10px_35px_rgba(0,0,0,0.8)] py-2 z-50 text-xs font-mono animate-fade-in divide-y divide-white/5">
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#0c0d14]/95 backdrop-blur-2xl border border-white/15 shadow-[0_10px_35px_rgba(0,0,0,0.8)] py-2 z-50 text-xs font-mono animate-fade-in divide-y divide-white/5">
+                  {/* Section: Backend & Deployment Mode */}
+                  <div className="px-2 py-1.5 space-y-1">
+                    <div className="px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase text-neutral-500 font-bold flex items-center justify-between">
+                      <span>// RUNTIME CONNECTION</span>
+                      <span className={healthStatus === 'Online' ? 'text-cyan-400' : 'text-emerald-400'}>
+                        {healthStatus === 'Online' ? 'LIVE API' : 'STANDALONE'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionsOpen(false)
+                        if (onRetryBackend) onRetryBackend()
+                      }}
+                      disabled={isConnectingBackend}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs tracking-[0.16em] uppercase transition bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 text-neutral-300 hover:text-white disabled:opacity-50"
+                      title="Attempt connecting to local FastAPI server on port 8000"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Server className={`w-3.5 h-3.5 ${healthStatus === 'Online' ? 'text-cyan-400' : 'text-emerald-400'}`} />
+                        <span>{healthStatus === 'Online' ? 'RE-CHECK LOCAL BACKEND' : 'CONNECT TO LOCAL BACKEND'}</span>
+                      </span>
+                      {isConnectingBackend ? (
+                        <RefreshCw className="w-3 h-3 animate-spin text-cyan-400" />
+                      ) : (
+                        <span className="text-[10px] text-neutral-500">:8000</span>
+                      )}
+                    </button>
+                  </div>
+
                   {/* Section: Project Actions */}
                   <div className="px-2 py-1.5 space-y-1">
                     <div className="px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase text-neutral-500 font-bold">
