@@ -27,8 +27,9 @@ from app.schemas import (
 from app.sample_data import get_sample_handover_data, get_clean_auth_handover_data
 from app.checklist import initialize_project_checklist, get_project_checklist, update_checklist_task_status
 from app.conflicts import detect_cross_document_conflicts
+from app.redaction import mask_sensitive_text
 
-STORAGE_FILE = os.path.join(DATA_DIR, "saved_handovers.json")
+STORAGE_FILE = os.environ.get("STORAGE_FILE", os.path.join(DATA_DIR, "saved_handovers.json"))
 
 
 class HandoverRepository:
@@ -595,7 +596,7 @@ class HandoverRepository:
             now_str = datetime.now(timezone.utc).isoformat()
 
             # Sanitize details to avoid storing secret strings in audit log
-            clean_details = json.dumps(details)
+            clean_details = mask_sensitive_text(json.dumps(details))
 
             cur.execute(
                 """

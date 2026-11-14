@@ -35,7 +35,13 @@ import {
   Search,
 } from 'lucide-react'
 
+const rawEnvApi = import.meta.env.VITE_API_BASE_URL
+const normalizedEnvApi = rawEnvApi
+  ? rawEnvApi.replace(/\/+$/, '') + (rawEnvApi.endsWith('/api') ? '' : '/api')
+  : null
+
 const BACKEND_CANDIDATES = [
+  ...(normalizedEnvApi ? [normalizedEnvApi] : []),
   'http://localhost:8000/api',
   'http://127.0.0.1:8000/api',
   '/api',
@@ -458,15 +464,15 @@ export default function App() {
 
   // Toggle Claim Approval
   const handleToggleApprove = async (claimId) => {
-    let nextApproved = false
+    let prevVal = null
     setProject((prev) => {
       if (!prev) return prev
       return {
         ...prev,
         claims: prev.claims.map((c) => {
           if (c.id === claimId) {
-            nextApproved = !c.is_approved
-            return { ...c, is_approved: nextApproved }
+            prevVal = c.is_approved
+            return { ...c, is_approved: !c.is_approved }
           }
           return c
         }),
@@ -487,29 +493,51 @@ export default function App() {
           const result = await res.json()
           showToast(`// CLAIM_${claimId} -> ${result.is_approved ? 'APPROVED' : 'PENDING'}`)
           return
-        } else if (res.status === 403) {
-          showToast('// 403_FORBIDDEN: ONLY_REVIEWERS_CAN_APPROVE')
+        } else {
+          // Revert optimistic state on 403 or server rejection
+          setProject((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              claims: prev.claims.map((c) =>
+                c.id === claimId ? { ...c, is_approved: prevVal } : c
+              ),
+            }
+          })
+          const errData = await res.json().catch(() => ({}))
+          showToast(`// REJECTED_${res.status}: ${errData.detail || 'PERMISSION_DENIED'}`)
           return
         }
       } catch (err) {
-        // Handled
+        // Revert on network exception
+        setProject((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            claims: prev.claims.map((c) =>
+              c.id === claimId ? { ...c, is_approved: prevVal } : c
+            ),
+          }
+        })
+        showToast(`// API_ERROR: ${err.message}`)
+        return
       }
     }
 
-    showToast(`// CLAIM_${claimId} -> ${nextApproved ? 'APPROVED' : 'PENDING'}`)
+    showToast(`// CLAIM_${claimId} -> ${!prevVal ? 'APPROVED' : 'PENDING'}`)
   }
 
   // Toggle Sensitive / Redaction
   const handleToggleSensitive = async (claimId) => {
-    let nextVal = false
+    let prevVal = null
     setProject((prev) => {
       if (!prev) return prev
       return {
         ...prev,
         claims: prev.claims.map((c) => {
           if (c.id === claimId) {
-            nextVal = !c.is_sensitive
-            return { ...c, is_sensitive: nextVal }
+            prevVal = c.is_sensitive
+            return { ...c, is_sensitive: !c.is_sensitive }
           }
           return c
         }),
@@ -527,15 +555,39 @@ export default function App() {
           1500
         )
         if (res.ok) {
-          showToast(nextVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
+          showToast(!prevVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
+          return
+        } else {
+          // Revert optimistic state on 403 or rejection
+          setProject((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              claims: prev.claims.map((c) =>
+                c.id === claimId ? { ...c, is_sensitive: prevVal } : c
+              ),
+            }
+          })
+          const errData = await res.json().catch(() => ({}))
+          showToast(`// REJECTED_${res.status}: ${errData.detail || 'PERMISSION_DENIED'}`)
           return
         }
       } catch (err) {
-        // Handled
+        setProject((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            claims: prev.claims.map((c) =>
+              c.id === claimId ? { ...c, is_sensitive: prevVal } : c
+            ),
+          }
+        })
+        showToast(`// API_ERROR: ${err.message}`)
+        return
       }
     }
 
-    showToast(nextVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
+    showToast(!prevVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
   }
 
   // Inline Edit
@@ -574,17 +626,9 @@ export default function App() {
 
   // Batch Approve All
   const handleApproveAll = async () => {
-    setProject((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        claims: prev.claims.map((c) => ({ ...c, is_approved: true })),
-      }
-    })
-
     if (healthStatus === 'Online' && activeApiBase) {
       try {
-        await fetchWithTimeout(
+        const res = await fetchWithTimeout(
           `${activeApiBase}/claims/approve-all`,
           {
             method: 'POST',
@@ -592,11 +636,34 @@ export default function App() {
           },
           1500
         )
+        if (res.ok) {
+          setProject((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              claims: prev.claims.map((c) => ({ ...c, is_approved: true })),
+            }
+          })
+          showToast('// ALL_CLAIMS_APPROVED_FOR_HANDOVER')
+          return
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          showToast(`// REJECTED_${res.status}: ${errData.detail || 'REVIEWER_ROLE_REQUIRED'}`)
+          return
+        }
       } catch (err) {
-        // Handled
+        showToast(`// API_ERROR: ${err.message}`)
+        return
       }
     }
 
+    setProject((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        claims: prev.claims.map((c) => ({ ...c, is_approved: true })),
+      }
+    })
     showToast('// ALL_CLAIMS_APPROVED_FOR_HANDOVER')
   }
 
@@ -620,13 +687,18 @@ export default function App() {
           showToast('// CONFLICT_RESOLVED: AUDIT_LOG_RECORDED')
           await fetchProjectData(activeApiBase)
           return
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          showToast(`// REJECTED_${res.status}: ${errData.detail || 'RESOLUTION_FAILED'}`)
+          return
         }
       } catch (err) {
         showToast(`// RESOLUTION_ERROR: ${err.message}`)
+        return
       }
     }
 
-    // Client update
+    // Client update in Standalone mode
     setProject((prev) => {
       if (!prev) return prev
       return {
@@ -638,7 +710,7 @@ export default function App() {
         ),
       }
     })
-    showToast('// CONFLICT_RESOLVED_CLIENT')
+    showToast('// CONFLICT_RESOLVED_STANDALONE')
   }
 
   // Update Successor Checklist Task (Outcome F)
@@ -670,13 +742,18 @@ export default function App() {
           })
           showToast(`// CHECKLIST: ${taskKey} -> ${nextStatus.toUpperCase()}`)
           return
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          showToast(`// CHECKLIST_REJECTED_${res.status}: ${errData.detail || 'FAILED'}`)
+          return
         }
       } catch (err) {
-        // Fallback
+        showToast(`// CHECKLIST_ERROR: ${err.message}`)
+        return
       }
     }
 
-    // Client update
+    // Client update in Standalone mode
     setProject((prev) => {
       if (!prev) return prev
       return {

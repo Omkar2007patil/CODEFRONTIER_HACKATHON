@@ -10,8 +10,8 @@ import secrets
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-DB_PATH = os.path.join(DATA_DIR, "handover_platform.db")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"))
+DB_PATH = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "handover_platform.db"))
 
 
 def get_db_connection() -> sqlite3.Connection:

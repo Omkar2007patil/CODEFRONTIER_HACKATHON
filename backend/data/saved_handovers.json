@@ -1,6 +1,6 @@
 {
   "active_id": "apex-core-2026",
-  "updated_at": "2026-11-14T18:56:36.500419+00:00",
+  "updated_at": "2026-11-14T20:44:17.912937+00:00",
   "projects": {
     "apex-auth-clean": {
       "project_id": "apex-auth-clean",
@@ -10,19 +10,359 @@
       "summary": "Sarah Lin is handing over the Apex Central Auth & Identity microservice to Devika Nair. All architectural decisions are benchmarked, JWT token signing is verified, zero blocking incidents exist on staging, and day-one continuation tasks are fully scoped.",
       "status": "approved",
       "approved_by": "reviewer@apex.dev",
-      "approved_at": "2026-11-14T18:56:34.797455+00:00",
-      "created_at": null,
-      "updated_at": null,
+      "approved_at": "2026-11-14T20:43:41.065591+00:00",
+      "created_at": "2026-11-14T18:41:49.694110+00:00",
+      "updated_at": "2026-11-14T20:43:41.066599+00:00",
       "raw_sources": [
         {
+          "id": "doc-2096ec",
           "filename": "adr_009_ed25519_jwt.md",
           "file_type": "markdown",
-          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes)."
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
         },
         {
+          "id": "doc-325560",
           "filename": "auth_ops_brief.txt",
           "file_type": "text",
-          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch."
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-acd12e",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-f433dc",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-519bfb",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-7768d9",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-1e98f0",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-3fc60b",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-4918cf",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-3954bb",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-461c01",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-75c3ec",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-9c8804",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-06daf3",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-233f23",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-cd7b17",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-b1ee1e",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-0913b4",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-12be22",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-bc4b67",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-97e597",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-2bff7a",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-ee15cc",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-4ff441",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-339ebe",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-4d796e",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-e9c58b",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-07ce0e",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-5025f4",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-665190",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-af0f95",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-4260dc",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-9b3735",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-7e9ca2",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-e71f71",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-eb0342",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-9b5fdd",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-ba114a",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-c15368",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-7305ca",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-fbc121",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-b2c48b",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-c5c676",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-087097",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-ebef38",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-ba9c05",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-d2a14e",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-70ea74",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
+        },
+        {
+          "id": "doc-afbb03",
+          "filename": "adr_009_ed25519_jwt.md",
+          "file_type": "markdown",
+          "content": "# ADR-009: Centralized JWT Signing Algorithm Migration\nProject: Apex Central Auth & Identity Gateway\nAuthor: Sarah Lin (Staff Security Architect)\nStatus: Accepted & Fully Verified\n\n### Context\nLegacy RS256 token signing incurred noticeable CPU overhead on high-throughput microservice verification hops.\n### Decision\nMigrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers. Benchmarking reveals a 4.2x speedup in token validation latency with reduced public key footprint (32 bytes).",
+          "sections": []
+        },
+        {
+          "id": "doc-952e50",
+          "filename": "auth_ops_brief.txt",
+          "file_type": "text",
+          "content": "Identity Service Operations Brief & Staging Health\nReview Date: 2026-11-08\nLead: Sarah Lin | Successor: Devika Nair\n\n[Cluster Health]\n- Staging and Canary clusters report 100% healthy health-checks across all pods. Zero open P0/P1 incidents.\n- Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.\n\n[Day-1 Transition Checklist]\n- Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.\n- Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
+          "sections": []
         }
       ],
       "claims": [
@@ -40,7 +380,7 @@
             "source_doc_id": null,
             "snippet": "Migrated token signing from RS256 to Ed25519 (EdDSA over Curve25519) across all production OAuth2 token issuers.",
             "line_or_section": "ADR-009: Centralized JWT Signing Algorithm Migration",
-            "location_type": "heading"
+            "location_type": "line"
           },
           "source_doc_id": null,
           "source_filename": "adr_009_ed25519_jwt.md",
@@ -52,8 +392,8 @@
           "is_sensitive": false,
           "is_approved": true,
           "version": 1,
-          "created_at": null,
-          "updated_at": null
+          "created_at": "2026-11-14T18:41:49.694110+00:00",
+          "updated_at": "2026-11-14T20:43:41.066599+00:00"
         },
         {
           "id": "auth-claim-2",
@@ -69,7 +409,7 @@
             "source_doc_id": null,
             "snippet": "Session invalidation backend: Distributed Redis session store configured with active dual-region replication. Verified zero dropped sessions during failover test.",
             "line_or_section": "Cluster Health",
-            "location_type": "heading"
+            "location_type": "line"
           },
           "source_doc_id": null,
           "source_filename": "auth_ops_brief.txt",
@@ -81,8 +421,8 @@
           "is_sensitive": false,
           "is_approved": true,
           "version": 1,
-          "created_at": null,
-          "updated_at": null
+          "created_at": "2026-11-14T18:41:49.694110+00:00",
+          "updated_at": "2026-11-14T20:43:41.066599+00:00"
         },
         {
           "id": "auth-claim-3",
@@ -98,7 +438,7 @@
             "source_doc_id": null,
             "snippet": "Rotate external identity provider client secrets in AWS Secrets Manager prior to Q1 rollout.",
             "line_or_section": "Day-1 Transition Checklist",
-            "location_type": "heading"
+            "location_type": "line"
           },
           "source_doc_id": null,
           "source_filename": "auth_ops_brief.txt",
@@ -110,8 +450,8 @@
           "is_sensitive": false,
           "is_approved": true,
           "version": 1,
-          "created_at": null,
-          "updated_at": null
+          "created_at": "2026-11-14T18:41:49.694110+00:00",
+          "updated_at": "2026-11-14T20:43:41.066599+00:00"
         },
         {
           "id": "auth-claim-4",
@@ -127,7 +467,7 @@
             "source_doc_id": null,
             "snippet": "Inspect Grafana telemetry board for /oauth/token p99 latency curve after traffic switch.",
             "line_or_section": "Day-1 Transition Checklist",
-            "location_type": "heading"
+            "location_type": "line"
           },
           "source_doc_id": null,
           "source_filename": "auth_ops_brief.txt",
@@ -139,8 +479,8 @@
           "is_sensitive": false,
           "is_approved": true,
           "version": 1,
-          "created_at": null,
-          "updated_at": null
+          "created_at": "2026-11-14T18:41:49.694110+00:00",
+          "updated_at": "2026-11-14T20:43:41.066599+00:00"
         }
       ],
       "conflicts": [],
@@ -314,42 +654,6 @@
           "filename": "sprint_tasks.txt",
           "file_type": "text",
           "content": "Sprint 44 Task Board & Milestones\nSprint Cycle: Oct 30 - Nov 15\nTarget Milestone: Phase 2 Public Beta Launch\n\nTasks:\n- [IN PROGRESS] Database migration scripts execution (APEX-398)\n  - Verify PostgreSQL schema matches migration scripts on staging instance.\n- [BLOCKED] Staging cache timeout debugging (APEX-412) - Unassigned\n- [PLANNED] Launch Schedule:\n  - Sprint review & final QA sign-off: Nov 14, 2026.\n  - Production Launch scheduled for Nov 15, 2026 (Note: Team lead announced public launch on Nov 15, despite API freeze target in ADR-004)."
-        },
-        {
-          "id": "doc-3f5103",
-          "filename": "notes_f5981b.txt",
-          "file_type": "text",
-          "content": "Decision: Kafka selected for streaming events f5981b.",
-          "sections": [
-            {
-              "section_id": "sec-txt-l1",
-              "filename": "notes_f5981b.txt",
-              "heading": "Overview / Notes",
-              "content": "Decision: Kafka selected for streaming events f5981b.",
-              "location_type": "line",
-              "location_ref": "Line 1-1 (Overview / Notes)",
-              "start_index": 1,
-              "end_index": 1
-            }
-          ]
-        },
-        {
-          "id": "doc-6cb591",
-          "filename": "tasks_f5981b.csv",
-          "file_type": "csv",
-          "content": "Header: Task, Status\nRow 2: Task: APEX-f5981b, Status: Completed",
-          "sections": [
-            {
-              "section_id": "sec-csv-r2",
-              "filename": "tasks_f5981b.csv",
-              "heading": "Row 2",
-              "content": "Task: APEX-f5981b, Status: Completed",
-              "location_type": "row",
-              "location_ref": "Row 2",
-              "start_index": 2,
-              "end_index": 2
-            }
-          ]
         }
       ],
       "claims": [
@@ -374,7 +678,7 @@
           "source_location": "ADR-001: Persistent Audit Trail and Compliance Store",
           "exact_source_excerpt": "PostgreSQL is selected for audit trail storage due to its ACID guarantees, robust JSONB support, and mature row-level security.",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Supported by source: Verbatim citation confirmed in 'architecture_decision_record.md' at location 'ADR-001: Persistent Audit Trail and Compliance Store' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+          "explanation": "Supported by source: Verbatim citation confirmed in 'architecture_decision_record.md' at ADR-001. Relational compliance store decision approved.",
           "conflict_notes": null,
           "is_sensitive": false,
           "is_approved": true,
@@ -403,7 +707,7 @@
           "source_location": "Incidents & Blockers (Line 3)",
           "exact_source_excerpt": "STAGING ALERT: Redis cache cluster in staging times out under sustained load (connection timeout after 5000ms during mock stress test). Owner: UNASSIGNED.",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Needs human review: Source quote is present in 'retro_notes_nov.txt' at location 'Incidents & Blockers (Line 3)', but contains speculative or unconfirmed qualifiers. Lead reviewer must verify operational reality.",
+          "explanation": "Needs human review: Operational incident confirmed in 'retro_notes_nov.txt', but owner is UNASSIGNED and root cause hypothesis is unconfirmed.",
           "conflict_notes": "Missing owner: Outgoing engineer logged APEX-412 but departing before assignment. Potential VPC or pool starvation.",
           "is_sensitive": false,
           "is_approved": true,
@@ -416,10 +720,10 @@
           "project_id": "apex-core-2026",
           "category": "project_dates_milestones",
           "statement": "All breaking API changes must cease by the API freeze milestone on November 10, 2026.",
-          "status": "verified",
+          "status": "conflicting",
           "validation_status": "supported",
           "reviewer_status": "pending",
-          "confidence": 1.0,
+          "confidence": 0.92,
           "evidence": {
             "source_name": "architecture_decision_record.md",
             "source_doc_id": null,
@@ -432,10 +736,10 @@
           "source_location": "ADR-004: Release Timeline & API Freeze",
           "exact_source_excerpt": "All breaking API changes must cease by the API freeze milestone on November 10, 2026.",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Supported by source: Verbatim citation confirmed in 'architecture_decision_record.md' at location 'ADR-004: Release Timeline & API Freeze' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+          "explanation": "Cross-document contradiction: ADR-004 establishes freeze on Nov 10, while sprint_tasks.txt targets public release Nov 15 with QA signoff Nov 14.",
           "conflict_notes": "Release date conflict: architecture_decision_record.md specifies API freeze on Nov 10, whereas sprint_tasks.txt schedules launch for Nov 15 with QA sign-off on Nov 14. Clarification needed from Product Lead before shipping.",
           "is_sensitive": false,
-          "is_approved": true,
+          "is_approved": false,
           "version": 1,
           "created_at": null,
           "updated_at": null
@@ -448,7 +752,7 @@
           "status": "conflicting",
           "validation_status": "supported",
           "reviewer_status": "pending",
-          "confidence": 1.0,
+          "confidence": 0.92,
           "evidence": {
             "source_name": "sprint_tasks.txt",
             "source_doc_id": null,
@@ -461,7 +765,7 @@
           "source_location": "Sprint 44 Task Board & Milestones",
           "exact_source_excerpt": "Production Launch scheduled for Nov 15, 2026 (Note: Team lead announced public launch on Nov 15, despite API freeze target in ADR-004).",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Supported by source: Verbatim citation confirmed in 'sprint_tasks.txt' at location 'Sprint 44 Task Board & Milestones' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+          "explanation": "Contradicts ADR-004 freeze milestone: Launch scheduled without sufficient staging verification buffer.",
           "conflict_notes": "Contradicts ADR-004 freeze deadline of Nov 10.",
           "is_sensitive": false,
           "is_approved": false,
@@ -490,7 +794,7 @@
           "source_location": "Sprint 44 Task Board (APEX-398)",
           "exact_source_excerpt": "Verify PostgreSQL schema matches migration scripts on staging instance.",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Supported by source: Verbatim citation confirmed in 'sprint_tasks.txt' at location 'Sprint 44 Task Board (APEX-398)' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+          "explanation": "Supported by source: Action item verified from Sprint 44 active task backlog.",
           "conflict_notes": null,
           "is_sensitive": false,
           "is_approved": true,
@@ -519,7 +823,7 @@
           "source_location": "Incidents & Blockers (Line 6)",
           "exact_source_excerpt": "api_key = \"ghp_mockApexTestStagingToken994821034\"",
           "extraction_method": "deterministic_heuristic",
-          "explanation": "Supported by source: Verbatim citation confirmed in 'retro_notes_nov.txt' at location 'Incidents & Blockers (Line 6)' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+          "explanation": "Sensitive credential detected: GitHub PAT format matched. Server-side redaction required before successor handoff.",
           "conflict_notes": "Sensitive token flagged: Must be redacted from successor view and exports.",
           "is_sensitive": true,
           "is_approved": true,
@@ -530,7 +834,7 @@
       ],
       "conflicts": [
         {
-          "id": "conf-613c46",
+          "id": "conf-100c68",
           "project_id": "apex-core-2026",
           "conflict_type": "dates_deadlines",
           "claim_id_1": "claim-3",
@@ -540,10 +844,10 @@
             "project_id": "apex-core-2026",
             "category": "project_dates_milestones",
             "statement": "All breaking API changes must cease by the API freeze milestone on November 10, 2026.",
-            "status": "verified",
+            "status": "conflicting",
             "validation_status": "supported",
             "reviewer_status": "pending",
-            "confidence": 1.0,
+            "confidence": 0.92,
             "evidence": {
               "source_name": "architecture_decision_record.md",
               "source_doc_id": null,
@@ -556,10 +860,10 @@
             "source_location": "ADR-004: Release Timeline & API Freeze",
             "exact_source_excerpt": "All breaking API changes must cease by the API freeze milestone on November 10, 2026.",
             "extraction_method": "deterministic_heuristic",
-            "explanation": "Supported by source: Verbatim citation confirmed in 'architecture_decision_record.md' at location 'ADR-004: Release Timeline & API Freeze' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+            "explanation": "Cross-document contradiction: ADR-004 establishes freeze on Nov 10, while sprint_tasks.txt targets public release Nov 15 with QA signoff Nov 14.",
             "conflict_notes": "Release date conflict: architecture_decision_record.md specifies API freeze on Nov 10, whereas sprint_tasks.txt schedules launch for Nov 15 with QA sign-off on Nov 14. Clarification needed from Product Lead before shipping.",
             "is_sensitive": false,
-            "is_approved": true,
+            "is_approved": false,
             "version": 1,
             "created_at": null,
             "updated_at": null
@@ -572,7 +876,7 @@
             "status": "conflicting",
             "validation_status": "supported",
             "reviewer_status": "pending",
-            "confidence": 1.0,
+            "confidence": 0.92,
             "evidence": {
               "source_name": "sprint_tasks.txt",
               "source_doc_id": null,
@@ -585,7 +889,7 @@
             "source_location": "Sprint 44 Task Board & Milestones",
             "exact_source_excerpt": "Production Launch scheduled for Nov 15, 2026 (Note: Team lead announced public launch on Nov 15, despite API freeze target in ADR-004).",
             "extraction_method": "deterministic_heuristic",
-            "explanation": "Supported by source: Verbatim citation confirmed in 'sprint_tasks.txt' at location 'Sprint 44 Task Board & Milestones' (provenance confidence 100%). Note: Source document confirms this statement was recorded; independent operational verification may still be required.",
+            "explanation": "Contradicts ADR-004 freeze milestone: Launch scheduled without sufficient staging verification buffer.",
             "conflict_notes": "Contradicts ADR-004 freeze deadline of Nov 10.",
             "is_sensitive": false,
             "is_approved": false,
@@ -594,12 +898,12 @@
             "updated_at": null
           },
           "explanation": "Release timeline contradiction: 'architecture_decision_record.md' establishes code/API freeze on Nov 10, 2026, whereas 'sprint_tasks.txt' schedules launch for Nov 15, 2026. This leaves insufficient or negative verification buffer for staging validation. Engineering Lead must reconcile the production cutover date prior to handover.",
-          "status": "resolved",
-          "resolution_choice": "accept_claim_1",
-          "rationale": "Product team confirmed API freeze milestone on Nov 10 governs. Launch moved to Nov 22 to permit staging hardening.",
-          "resolved_by": "reviewer@apex.dev",
-          "resolved_at": "2026-11-14T18:56:35.335944+00:00",
-          "created_at": "2026-11-14T18:56:35.209468+00:00"
+          "status": "unresolved",
+          "resolution_choice": null,
+          "rationale": null,
+          "resolved_by": null,
+          "resolved_at": null,
+          "created_at": "2026-11-14T20:44:17.799307+00:00"
         }
       ],
       "checklist": [
@@ -612,7 +916,7 @@
           "category": "orientation",
           "status": "completed",
           "completed_by": "successor@apex.dev",
-          "completed_at": "2026-11-14T18:56:34.262909+00:00",
+          "completed_at": "2026-11-14T20:43:40.608173+00:00",
           "notes": "Reviewed ADRs and departure brief with team lead.",
           "sort_order": 1,
           "created_at": "2026-11-14T18:41:49.557971+00:00"
@@ -640,7 +944,7 @@
           "category": "planning",
           "status": "completed",
           "completed_by": "successor@apex.dev",
-          "completed_at": "2026-11-14T18:56:35.037306+00:00",
+          "completed_at": "2026-11-14T20:43:41.323474+00:00",
           "notes": "Milestone confirmed for testing.",
           "sort_order": 3,
           "created_at": "2026-11-14T18:41:49.557971+00:00"
@@ -694,10 +998,10 @@
           "title": "Verify Environment Configuration (Sanitized)",
           "description": "Confirm required environment variables and staging endpoints exist without exposing private secrets.",
           "category": "security",
-          "status": "pending",
-          "completed_by": null,
-          "completed_at": null,
-          "notes": null,
+          "status": "completed",
+          "completed_by": "successor@apex.dev",
+          "completed_at": "2026-11-14T20:44:17.591900+00:00",
+          "notes": "Verified staging connection",
           "sort_order": 7,
           "created_at": "2026-11-14T18:41:49.557971+00:00"
         },

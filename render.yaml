@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: codefrontier-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ALLOWED_ORIGINS
+        value: "https://codefrontier-hackathon-3b6g.vercel.app,http://localhost:5173"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: codefrontier-data
+      mountPath: /var/data
+      sizeGB: 1

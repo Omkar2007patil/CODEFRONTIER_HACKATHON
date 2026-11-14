@@ -71,14 +71,19 @@ app = FastAPI(
 )
 
 # Configurable CORS
-ALLOWED_ORIGINS = os.environ.get(
-    "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,https://codefrontier-hackathon-3b6g.vercel.app",
-).split(",")
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://codefrontier-hackathon-3b6g.vercel.app",
+    ).split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if "*" in ALLOWED_ORIGINS else ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -767,3 +772,79 @@ def export_handover_markdown(
         content=md_content,
         headers={"Content-Disposition": f"attachment; filename=handover-brief-{project_id}.md"},
     )
+
+
+@app.get("/api/projects/{project_id}/export/audit-json")
+def export_handover_audit_json(
+    project_id: str,
+    user: Optional[UserProfile] = Depends(get_optional_user),
+):
+    """Generates machine-readable, fully sanitized handover-audit.json."""
+    proj = repo.get_project(project_id)
+    if not proj:
+        raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found.")
+
+    sanitized = sanitize_project_for_successor(proj)
+    audit_payload = {
+        "handover_audit_spec": "3.0.0",
+        "export_timestamp": datetime.now(timezone.utc).isoformat(),
+        "platform": "Apex Coders Knowledge Handover Platform",
+        "project_metadata": {
+            "project_id": sanitized.project_id,
+            "project_name": sanitized.project_name,
+            "outgoing_member": sanitized.outgoing_member,
+            "intended_role": sanitized.intended_role,
+            "status": sanitized.status,
+            "summary": sanitized.summary,
+        },
+        "metrics": {
+            "total_claims": len(sanitized.claims),
+            "approved_claims": len([c for c in sanitized.claims if c.is_approved]),
+            "conflicts_count": len(sanitized.conflicts),
+        },
+        "claims": [c.model_dump() for c in sanitized.claims],
+        "conflicts": [conf.model_dump() for conf in sanitized.conflicts],
+        "checklist": [item.model_dump() for item in (sanitized.checklist or get_project_checklist(project_id))],
+    }
+    return JSONResponse(
+        content=audit_payload,
+        headers={"Content-Disposition": f"attachment; filename=handover-audit-{project_id}.json"},
+    )
+
+
+@app.get("/api/projects/{project_id}/audit-logs")
+def get_project_audit_logs(
+    project_id: str,
+    user: UserProfile = Depends(require_roles(["project_reviewer"])),
+):
+    """Reviewer Gate: Returns tamper-evident audit history from SQLite database."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT id, project_id, entity_type, entity_id, action,
+               user_id, user_email, user_role, details_json, created_at
+        FROM audit_logs
+        WHERE project_id = ?
+        ORDER BY created_at DESC
+        """,
+        (project_id,),
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    logs = []
+    for r in rows:
+        logs.append({
+            "id": r["id"],
+            "project_id": r["project_id"],
+            "entity_type": r["entity_type"],
+            "entity_id": r["entity_id"],
+            "action": r["action"],
+            "user_id": r["user_id"],
+            "user_email": r["user_email"],
+            "user_role": r["user_role"],
+            "details": json.loads(r["details_json"]),
+            "created_at": r["created_at"],
+        })
+    return logs
