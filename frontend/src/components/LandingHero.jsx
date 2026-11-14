@@ -44,7 +44,7 @@ export default function LandingHero({
               TEAM APEX CODERS
             </span>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-950/40 text-cyan-300 border border-cyan-400/30 hidden sm:inline tracking-widest uppercase">
-              R2 BUILD
+              ROUND 3 FINAL
             </span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function LandingHero({
         {/* Tracked Super-Header */}
         <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/85 border border-white/10 shadow-[0_0_20px_rgba(0,240,255,0.15)] font-mono text-xs tracking-[0.18em] uppercase text-neutral-400 animate-fade-in-up delay-100">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff] animate-pulse" />
-          <span>// CODEFRONTIER HACKATHON R2</span>
+          <span>// CODEFRONTIER HACKATHON ROUND 3</span>
           <span className="text-neutral-700">&bull;</span>
           <span className="text-rose-400 font-bold">VIT PUNE</span>
         </div>

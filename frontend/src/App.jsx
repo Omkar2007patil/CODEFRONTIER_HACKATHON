@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import Header from './components/Header'
+import NavigationTabBar from './components/NavigationTabBar'
+import OverviewDashboard from './components/OverviewDashboard'
+import ConflictWorkspace from './components/ConflictWorkspace'
+import IngestionWorkspace from './components/IngestionWorkspace'
+import ReviewerAuditWorkspace from './components/ReviewerAuditWorkspace'
 import SourceViewer from './components/SourceViewer'
 import ClaimCard from './components/ClaimCard'
 import SuccessorView from './components/SuccessorView'
@@ -71,7 +76,8 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState('')
 
   // Top-level screen state: 'landing' (showcase) | 'studio' (workspace)
-  const [viewMode, setViewMode] = useState('landing')
+  const [viewMode, setViewMode] = useState('studio')
+  const [activeTab, setActiveTab] = useState('overview')
 
   // Dual-role view mode inside studio: 'lead' | 'successor'
   const [role, setRole] = useState('lead')
@@ -109,12 +115,14 @@ export default function App() {
   const applyTourStepActions = (stepIndex) => {
     if (stepIndex === 0) {
       setRole('lead')
+      setActiveTab('evidence')
       if (project?.claims?.[0]?.evidence) {
         handleInspectEvidence(project.claims[0].evidence)
       }
       showToast('// TOUR: STEP 1 - EVIDENCE CITATION ANCHORED')
     } else if (stepIndex === 1) {
       setRole('lead')
+      setActiveTab('conflicts')
       const conflictClaim = project?.claims?.find((c) => c.status === 'conflicting')
       if (conflictClaim?.evidence) {
         handleInspectEvidence(conflictClaim.evidence)
@@ -122,11 +130,13 @@ export default function App() {
       showToast('// TOUR: STEP 2 - TIMELINE CONTRADICTION DETECTED')
     } else if (stepIndex === 2) {
       setRole('lead')
+      setActiveTab('audit')
       setHighlightedSnippet(null)
       setHighlightedSource(null)
       showToast('// TOUR: STEP 3 - REVIEWER TRIAGE WORKFLOW')
     } else if (stepIndex === 3) {
       setRole('successor')
+      setActiveTab('successor')
       showToast('// TOUR: STEP 4 - SUCCESSOR DAY-1 ONBOARDING')
     }
   }
@@ -163,6 +173,7 @@ export default function App() {
   // Top-level screen handlers
   const handleLaunchDemo = async () => {
     setViewMode('studio')
+    setActiveTab('overview')
     if (!project) {
       if (healthStatus === 'Online' && activeApiBase) {
         await fetchProjectData(activeApiBase)
@@ -830,6 +841,12 @@ export default function App() {
     return { total, approved, pending, conflicts, sensitive }
   }, [project])
 
+  // Unresolved conflict count for badges & alerts
+  const unresolvedConflictCount = useMemo(() => {
+    if (!project || !project.conflicts) return 0
+    return project.conflicts.filter((c) => c.status === 'unresolved').length
+  }, [project])
+
   // Filtered claims with search
   const filteredClaims = useMemo(() => {
     if (!project || !project.claims) return []
@@ -903,7 +920,14 @@ export default function App() {
             project={project}
             healthStatus={healthStatus}
             role={role}
-            setRole={setRole}
+            setRole={(newRole) => {
+              setRole(newRole)
+              if (newRole === 'successor') {
+                setActiveTab('successor')
+              } else if (activeTab === 'successor') {
+                setActiveTab('overview')
+              }
+            }}
             currentUser={currentUser}
             onSwitchUserRole={handleSwitchUserRole}
             onResetProject={handleResetProject}
@@ -913,7 +937,7 @@ export default function App() {
             onExportJson={handleExportJson}
             onOpenPortfolio={() => setIsPortfolioOpen(true)}
             onBackToLanding={handleBackToLanding}
-            onOpenIngest={() => setIsIngestModalOpen(true)}
+            onOpenIngest={() => setActiveTab('ingest')}
             onStartTour={handleStartTour}
             onRetryBackend={() => initBackend(false)}
             isConnectingBackend={isConnectingBackend}
@@ -921,7 +945,29 @@ export default function App() {
             isResetting={isResetting}
           />
 
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          <NavigationTabBar
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab)
+              if (tab === 'successor') {
+                setRole('successor')
+                if (currentUser?.role !== 'incoming_successor') {
+                  handleSwitchUserRole('incoming_successor')
+                }
+              } else {
+                setRole('lead')
+                if (currentUser?.role === 'incoming_successor') {
+                  handleSwitchUserRole('project_reviewer')
+                }
+              }
+            }}
+            stats={stats}
+            unresolvedConflictCount={unresolvedConflictCount}
+            onStartTour={handleStartTour}
+            currentUserRole={currentUser?.role || (role === 'lead' ? 'project_reviewer' : 'incoming_successor')}
+          />
+
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
             {/* Loading Indicator */}
             {loading && !project && (
               <div className="py-28 text-center text-neutral-500 space-y-3 font-mono">
@@ -949,49 +995,63 @@ export default function App() {
               </div>
             )}
 
-            {/* Workspace Content */}
+            {/* Workspace Content by Screen Tab */}
             {project && (
               <>
-                {/* REVIEWER / LEAD MODE */}
-                {role === 'lead' && (
-                  <div className="space-y-8">
+                {/* 1. OVERVIEW DASHBOARD */}
+                {activeTab === 'overview' && (
+                  <OverviewDashboard
+                    project={project}
+                    stats={stats}
+                    onNavigateTab={(tab) => {
+                      if (tab === 'successor') {
+                        setRole('successor')
+                        handleSwitchUserRole('incoming_successor')
+                      } else {
+                        setRole('lead')
+                      }
+                      setActiveTab(tab)
+                    }}
+                    onOpenConflictModal={(conf) => setActiveConflict(conf)}
+                    onLockHandover={() => setIsLockModalOpen(true)}
+                    currentUser={currentUser}
+                  />
+                )}
+
+                {/* 2. EVIDENCE EXPLORER */}
+                {activeTab === 'evidence' && (
+                  <div className="space-y-6">
                     <BentoMetricsBar
                       stats={stats}
                       selectedCategoryFilter={selectedCategoryFilter}
                       onSelectFilter={(filterId) => setSelectedCategoryFilter(filterId)}
                     />
 
-                    {/* Executive Synthesis Panel */}
-                    <div className="p-6 sm:p-7 rounded-2xl bg-[#0c0d14]/75 backdrop-blur-xl border border-white/10 hover:border-cyan-400/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative shadow-lg">
-                      <div className="space-y-2 max-w-3xl">
-                        <div className="flex items-center gap-2.5 text-xs font-mono tracking-[0.18em] text-cyan-400 uppercase font-bold">
-                          <span>// 01. RECONSTRUCTION_SYNTHESIS</span>
-                          <span className="text-neutral-700">&bull;</span>
-                          <span className="text-neutral-400">
-                            {project.claims?.length || 0} CLAIMS &bull; {project.raw_sources?.length || 0} ARTIFACTS
-                          </span>
-                        </div>
-                        <p className="font-body text-sm text-neutral-300 leading-relaxed">
-                          {project.summary}
-                        </p>
+                    {/* Evidence Header Banner */}
+                    <div className="p-4 sm:p-5 rounded-xl bg-[#0c0d14]/80 backdrop-blur-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
+                        <span className="font-bold uppercase tracking-wider">// EVIDENCE CITATION LEDGER:</span>
+                        <span className="text-neutral-400 font-normal">
+                          Click any citation snippet to anchor exact line ranges and original artifact provenance.
+                        </span>
                       </div>
-
-                      <div className="shrink-0 flex items-center gap-3">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={handleApproveAll}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black/90 border border-emerald-500/40 text-emerald-300 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(52,211,153,0.3)] text-xs font-mono tracking-[0.18em] uppercase font-bold transition active:scale-95"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 text-xs font-mono tracking-wider uppercase font-bold transition"
                         >
-                          <CheckCheck className="w-4 h-4 text-emerald-400" />
-                          <span>[ BATCH_APPROVE_ALL ]</span>
+                          <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Batch Approve</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Two-Column Split Workspace */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                       {/* Left: Source Artifacts Viewer (5 cols) */}
-                      <div className="lg:col-span-5 h-[800px] sticky top-24">
+                      <div className="lg:col-span-5 h-[800px] sticky top-40">
                         <SourceViewer
                           rawSources={project.raw_sources}
                           activeSourceIndex={activeSourceIndex}
@@ -1003,10 +1063,9 @@ export default function App() {
                       </div>
 
                       {/* Right: Claims Stream & Triage (7 cols) */}
-                      <div className="lg:col-span-7 space-y-5">
+                      <div className="lg:col-span-7 space-y-4">
                         {/* Search and Filters */}
                         <div className="bg-[#0c0d14]/80 backdrop-blur-xl p-3 rounded-xl border border-white/10 space-y-2.5 shadow-md">
-                          {/* Search Input */}
                           <div className="relative">
                             <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
@@ -1027,7 +1086,6 @@ export default function App() {
                             )}
                           </div>
 
-                          {/* Filter Tabs */}
                           <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 font-mono text-xs tracking-wider">
                             <span className="text-neutral-500 px-1 uppercase text-[10px] font-bold">
                               // FILTER:
@@ -1088,8 +1146,52 @@ export default function App() {
                   </div>
                 )}
 
-                {/* SUCCESSOR VIEW (Day 1-30 Sanitized & Persistent Checklist) */}
-                {role === 'successor' && (
+                {/* 3. CONFLICT RESOLUTION WORKSPACE */}
+                {activeTab === 'conflicts' && (
+                  <ConflictWorkspace
+                    conflicts={project.conflicts || []}
+                    onResolveConflict={handleResolveConflict}
+                    onInspectEvidence={(ev) => {
+                      handleInspectEvidence(ev)
+                      setActiveTab('evidence')
+                    }}
+                    isReviewer={role === 'lead'}
+                    currentUser={currentUser}
+                  />
+                )}
+
+                {/* 4. INGESTION WORKSPACE */}
+                {activeTab === 'ingest' && (
+                  <IngestionWorkspace
+                    project={project}
+                    onUploadFiles={handleUploadFiles}
+                    onIngestCustomText={handleIngestCustomText}
+                    isReviewer={role === 'lead'}
+                    onInspectEvidence={(ev) => {
+                      handleInspectEvidence(ev)
+                      setActiveTab('evidence')
+                    }}
+                  />
+                )}
+
+                {/* 5. REVIEWER & LIVE AUDIT WORKSPACE */}
+                {activeTab === 'audit' && (
+                  <ReviewerAuditWorkspace
+                    project={project}
+                    claims={project.claims || []}
+                    onToggleApprove={handleToggleApprove}
+                    onToggleSensitive={handleToggleSensitive}
+                    onUpdateStatement={handleUpdateStatement}
+                    onApproveAll={handleApproveAll}
+                    onLockHandover={() => setIsLockModalOpen(true)}
+                    currentUser={currentUser}
+                    activeApiBase={activeApiBase}
+                    authToken={authToken}
+                  />
+                )}
+
+                {/* 6. SUCCESSOR SANITIZED DASHBOARD & CHECKLIST */}
+                {activeTab === 'successor' && (
                   <SuccessorView
                     project={project}
                     approvedClaims={successorClaims}
@@ -1097,7 +1199,10 @@ export default function App() {
                     onUpdateChecklistTask={handleUpdateChecklistTask}
                     onExportMarkdown={handleExportMarkdown}
                     onExportJson={handleExportJson}
-                    onInspectEvidence={handleInspectEvidence}
+                    onInspectEvidence={(ev) => {
+                      handleInspectEvidence(ev)
+                      setActiveTab('evidence')
+                    }}
                     onOpenConflictModal={(conf) => setActiveConflict(conf)}
                   />
                 )}
