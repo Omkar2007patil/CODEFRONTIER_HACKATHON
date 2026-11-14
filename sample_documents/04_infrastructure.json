@@ -1,0 +1,22 @@
+{
+  "platform": "Apex Core Enterprise Gateway",
+  "version": "3.0.0",
+  "database": {
+    "engine": "PostgreSQL",
+    "version": "16.2",
+    "host": "staging-db.internal",
+    "port": 5432,
+    "max_connections": 50
+  },
+  "caching": {
+    "service": "Redis",
+    "cluster": "staging-redis-cluster",
+    "max_connections": 10,
+    "timeout_ms": 5000
+  },
+  "security": {
+    "token_algorithm": "Ed25519",
+    "token_expiry_hours": 24,
+    "audit_trail_immutable": true
+  }
+}

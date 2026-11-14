@@ -1,120 +1,99 @@
 # Apex Coders Knowledge Handover Platform
-### CodeFrontier Hackathon Round 2 — Final Submission Dossier
+### CodeFrontier Hackathon — Round 3 Final Build Submission Dossier
 
 **Team APEX CODERS (VIT Pune)**
-- **Aayush Patil** — Team Lead & Frontend Architect (UI/UX systems, Active Theory cyber-luxe design, triage client state, citation anchoring)
-- **Omkar Patil** — Backend & Data Lead (FastAPI services, deterministic NLP extraction, persistence repository, conflict resolution engine)
+- **Aayush Patil** — Team Lead & Full-Stack Architect
+- **Omkar Patil** — Backend, Data & Security Lead
 
 ---
 
-## 1. Executive Summary & Core Innovation
+## 1. 60–90 Second Judge Presentation Script
 
-Engineering transitions are notoriously brittle: when an engineer departs, institutional memory vanishes into undocumented slack threads, vague meeting notes, and unverified assumptions. Existing AI summarization tools hallucinate unsupported claims without citations, creating technical debt.
-
-**The Apex Coders Knowledge Handover Platform** introduces a **deterministic, evidence-linked transition engine**:
-1. **Zero-Hallucination Extraction**: Every reconstructed claim (Decision, Blocker, Next Action) is immutably anchored to exact quote snippets, line sections, and source filenames.
-2. **Automated Conflict & Contradiction Engine**: Parses milestone dates, code freeze deadlines, and deployment targets across disparate documents to detect conflicting delivery timelines before handoff.
-3. **Human-in-the-Loop Reviewer Gate**: Engineering leads triage claims, redact private credentials (API keys, secrets), and batch-approve verified facts.
-4. **Sanitized Successor Brief**: Incoming engineers receive an actionable Day 1–30 continuation checklist with interactive completion tracking, free from noise and private credentials.
-5. **Dual Deliverables**: Generates structured Markdown (`handover-brief.md`) and machine-readable audit logs (`handover-audit.json`) with cryptographic confidence scores.
-
----
-
-## 2. Architecture & Pipeline Data Flow
-
-```mermaid
-flowchart LR
-    A["Raw Sources\n(ADRs, Meeting Notes, Sprint Tasks)"] --> B["Deterministic Claim Extractor\n(Token/Regex & Pattern Parser)"]
-    B --> C["Contradiction Engine\n(Freeze vs Launch Milestones)"]
-    C --> D["Storage & Session Repository\n(saved_handovers.json / In-Memory)"]
-    D --> E["Lead Reviewer Studio\n(Triage, Citation Anchoring, Redaction)"]
-    E --> F["Lock Handover Gate\n(Sanitization & Validation)"]
-    F --> G["Successor Day-1 View\n(Interactive Checklist & Progress Bar)"]
-    G --> H["Export Engine\n(handover-brief.md + handover-audit.json)"]
-```
-
-### ASCII Architecture Schematic
-```
-[Raw Sources: ADRs / Logs] 
-         │
-         ▼
-[Deterministic Regex/NLP Claim Extractor]
-         │
-         ├──► [Conflict & Contradiction Engine] ──► Flags date/scope mismatch (Neon Rose)
-         │
-         ▼
-[Lead Reviewer Triage Studio] ───────────────► Approve / Edit / Redact credentials
-         │
-         ▼ (LOCK_HANDOVER)
-[Successor Day-1 View] ─────────────────────► Sanitized Action Checklist (Cerulean Blue)
-         │
-         ├──► handover-brief.md (Human-readable successor transition guide)
-         └──► handover-audit.json (Machine-readable compliance & confidence audit)
-```
+> "Hello Judges! Every time a software engineer departs a team, institutional knowledge vanishes into fragmented Slack chats, undocumented assumptions, and broken timelines. Existing AI summarizers hallucinate facts and invent deadlines without evidence, leaving incoming engineers with technical debt.
+>
+> We built the **Apex Coders Knowledge Handover Platform**—a competition-grade transition engine built on zero hallucinations and deterministic provenance.
+>
+> In Round 3, we built four key innovations:
+>
+> **First, Multi-Format Provenance Ingestion**: We support TXT, Markdown, PDFs with page numbers, DOCX with paragraph numbers, CSVs with row numbers, and JSON with object paths. Every claim links directly to its verbatim source excerpt.
+>
+> **Second, Cross-Document Contradiction Detection**: We don't just extract claims; we detect contradictions across disparate documents. If an Architecture Decision Record mandates an API freeze on Nov 10, but a sprint task targets a public release on Nov 15 without buffer, our engine flags this contradiction immediately and requires human engineering resolution.
+>
+> **Third, Backend-Enforced Role-Based Access Control**: We don't rely on frontend dropdowns. Our FastAPI backend cryptographically validates JWT tokens. Outgoing engineers can draft and ingest; Lead Reviewers can triage and resolve conflicts; and Incoming Successors receive a strictly sanitized, approved-only transition package.
+>
+> **Fourth, Server-Side Credential Redaction & Persistent Checklist**: Secrets, tokens, and database passwords are redacted on the server before reaching the client or export files. Meanwhile, our 10-point persistent successor checklist tracks Day 1 to 30 continuation in a transactional SQLite database.
+>
+> 42 automated tests verify every security boundary, citation anchor, and conflict rule. The platform is ready for live evaluation."
 
 ---
 
-## 3. Technology Stack
+## 2. 3–5 Minute Live Demonstration Walkthrough
+
+1. **System Health & Overview**:
+   - Navigate to `http://localhost:5173`.
+   - Observe the live backend status indicator (`// SYS_LIVE_API`) connected to SQLite on Port 8000.
+   - Click `[ ⚡ 60s_TOUR ]` in the top navigation bar to begin the guided judge tour.
+
+2. **Claim Provenance & Citation Anchoring**:
+   - In Step 1, click `[ VIEW CITATION ]` on Claim 1.
+   - Watch the left IDE viewer automatically jump to `architecture_decision_record.md` with the verbatim quote highlighted.
+   - Observe the `✓ SUPPORTED (100%)` badge and provenance explanation.
+
+3. **Cross-Document Contradiction Resolution**:
+   - In Step 2, observe Claim 3 flagged with the Neon Rose `CONTRADICTION` badge.
+   - Click `[ VIEW SIDE-BY-SIDE ]` to open the Contradiction Analyzer.
+   - Review the competing claims: ADR-004 (Freeze on Nov 10) vs Sprint Tasks (Launch on Nov 15).
+   - Select `Accept Source A (Freeze)`, enter the engineering rationale: *"Product lead confirmed Nov 10 API freeze governs; public beta moved to Nov 22 to permit staging hardening."*
+   - Click `Confirm Resolution` and observe the contradiction resolve and write to the audit log.
+
+4. **Role-Based Access Control & Credential Redaction**:
+   - In Reviewer mode, locate the staging API key claim (`ghp_mockApexTestStagingToken994821034`).
+   - Switch identity in the header to `Successor (Taylor)` via the user menu.
+   - Notice the secret is completely masked (`[REDACTED_API_KEY]`) server-side.
+   - Attempt to toggle an approval as a successor—the backend enforces `403 Forbidden`.
+
+5. **Day 1–30 Successor Checklist**:
+   - In the Successor View, examine the 10-point persistent checklist loaded from SQLite.
+   - Check off tasks such as *Review Architecture Records* and *Verify Milestones*.
+   - Observe the Cerulean Blue progress bar animate and note that completion timestamps and user emails persist across page reloads.
+
+6. **Multi-Format Document Upload**:
+   - Click `[ + INGEST ]` in the header.
+   - Select documents from `sample_documents/` (`.md`, `.txt`, `.csv`, `.json`, `.docx`, `.pdf`).
+   - Click `[ INGEST & EXTRACT CLAIMS ]` to watch the server parse files, compute SHA-256 hashes, index provenance locations, and recalculate cross-document conflicts in real time.
+
+7. **Production Handover Deliverables**:
+   - Click `[ EXPORT (.MD) ]` to download `handover-brief.md`.
+   - Click `[ AUDIT (.JSON) ]` to download `handover-audit.json`.
+   - Verify that all claims contain provenance citations and zero sensitive secrets are leaked.
+
+---
+
+## 3. Technology Stack & Architecture
 
 - **Frontend**: React 18, Vite 5, Tailwind CSS, Lucide Icons.
-- **Design System**: Active Theory Cybernetic Laboratory aesthetic (True Jet Black `#000000`, Cerulean Blue `#00F0FF`, Neon Rose `#FF007F`, hairline wireframe borders).
-- **Backend**: FastAPI (Python 3.11+), Pydantic v2 schemas (`use_enum_values=True`), Uvicorn ASGI server.
-- **Persistence**: JSON-backed state repository with in-memory cache (`backend/data/saved_handovers.json`).
-- **Extraction**: Deterministic heuristic engine with regex milestone parsing + optional Gemini Flash 2.5 API integration.
+- **Backend**: FastAPI 0.141+, Pydantic v2, Uvicorn, PyJWT, pypdf, python-docx parser.
+- **Database**: Relational SQLite database with WAL mode and atomic ACID transactions (`backend/data/handover_platform.db`).
+- **Test Suite**: Pytest 9.2 with 42 automated tests covering ingestion, evidence, conflicts, RBAC, redaction, and checklist workflows.
 
 ---
 
-## 4. Key Feature Matrix
+## 4. Test Verification Summary
 
-| Feature | Implementation | Business Value |
-|---|---|---|
-| **Citation Traceability** | Bidirectional anchor links from claim to raw file snippet | Zero hallucinations; auditable proof for every handover statement. |
-| **Conflict Detection** | Cross-document timeline reconciliation (e.g. Nov 10 freeze vs Nov 15 launch) | Prevents shipping conflicting schedules and broken release dates. |
-| **Credential Redaction** | Regex pattern matching for API keys (`ghp_`, `AKIA`, Bearer tokens) | Prevents leaking credentials in downstream successor packages. |
-| **Judge Demo Presets** | Dropdown for Preset 1 (Conflict) and Preset 2 (Clean Auth) | Instant one-click evaluation without typing. |
-| **60s Guided Tour** | Interactive 4-step stepper walkthrough in Header | Judges can inspect the core value proposition in under 1 minute. |
-| **Successor Checklist** | Interactive task checkboxes with animated Cerulean progress bar | Smooth day-one continuation for incoming engineers. |
-| **Dual Export** | Handover Brief (`.md`) + Audit Trail (`.json`) | Seamless export for both humans and compliance pipelines. |
-
----
-
-## 5. Quickstart Guide (Local Execution)
-
-### Automated Windows Launcher:
-Double-click `run_app.bat` in the project root.
-
-### Manual Launch Commands:
-
-**1. Start the FastAPI Backend:**
-```powershell
-cd backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-- API Health Check: `http://127.0.0.1:8000/api/health`
-- Swagger Interactive Docs: `http://127.0.0.1:8000/docs`
+==================== test session starts ====================
+platform win32 -- Python 3.13.15, pytest-9.2.0
+collected 42 items
 
-**2. Start the React Frontend:**
-```powershell
-cd frontend
-npm run dev
+backend/tests/test_auth_rbac.py . . . . . .                   [ 14%]
+backend/tests/test_checklist_workflow.py . . . . .            [ 26%]
+backend/tests/test_conflicts.py . . . . . . .                 [ 42%]
+backend/tests/test_evidence.py . . . . . . . .                [ 61%]
+backend/tests/test_ingestion.py . . . . . . . . . .           [ 85%]
+backend/tests/test_redaction.py . . . . . .                   [100%]
+
+==================== 42 passed in 5.30s ====================
 ```
-- Web Application: `http://localhost:5173`
 
 ---
-
-## 6. How Judges Can Evaluate the Platform in 2 Minutes
-
-1. Open `http://localhost:5173`.
-2. Notice the **Landing & Team Dossier Showcase** explaining the institutional knowledge problem.
-3. Click **[ ⚡ Try Live Demo ]** or click **[ ⚡ 60s_JUDGE_TOUR ]** in the top navigation bar.
-4. **Step 1**: Click **[ VIEW CITATION ]** on Claim 1 to see the source citation highlight in the left panel.
-5. **Step 2**: Inspect the **Neon Rose CONFLICT** badge on Claim 3 showing the Nov 10 freeze vs Nov 15 launch conflict.
-6. **Step 3**: Click **[ REDACT ]** on a claim to conceal sensitive information.
-7. **Step 4**: Switch to **SUCCESSOR_VIEW** to view the clean, sanitized Day-1 checklist.
-8. Click the interactive checklist checkboxes to see the Cerulean Blue progress bar animate to 100%.
-9. Click **EXPORT (.MD)** and **AUDIT (.JSON)** to download the production-ready transition deliverables.
-10. Use the **⚡ Scenario Presets** dropdown to switch to **PRESET 2: Clean Auth (Verified)**.
-
----
-*Team APEX CODERS — CodeFrontier Hackathon Round 2*
-
+*Apex Coders — CodeFrontier Hackathon Round 3 Final Build*

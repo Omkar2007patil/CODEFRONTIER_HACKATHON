@@ -1,0 +1,5 @@
+Milestone_ID,Milestone_Name,Target_Date,Owner,Status
+M-101,API Freeze Cutoff,2026-11-10,Alex Chen,Active
+M-102,Staging QA Signoff,2026-11-14,Jordan Lee,In Review
+M-103,Public Beta Launch,2026-11-15,Devika Nair,Contradictory
+M-104,Database Migration (APEX-398),2026-11-12,Alex Chen,Completed

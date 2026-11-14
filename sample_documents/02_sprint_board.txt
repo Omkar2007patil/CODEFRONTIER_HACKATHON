@@ -1,0 +1,14 @@
+Sprint 44 Task Board & Milestones
+Sprint Cycle: Oct 30 - Nov 15
+Target Milestone: Phase 2 Public Beta Launch
+
+Tasks:
+- [IN PROGRESS] Database migration scripts execution (APEX-398)
+  - Verify PostgreSQL schema matches migration scripts on staging instance.
+- [BLOCKED] Staging cache timeout debugging (APEX-412) - Owner: UNASSIGNED.
+- [PLANNED] Launch Schedule:
+  - Sprint review & final QA sign-off: Nov 14, 2026.
+  - Production Launch scheduled for Nov 15, 2026 (Note: Team lead announced public launch on Nov 15, despite API freeze target in ADR-004).
+
+Credentials & Tokens (Staging Test Only):
+- STAGING API KEY: api_key = "ghp_mockApexTestStagingToken994821034"

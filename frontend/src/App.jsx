@@ -9,6 +9,7 @@ import LandingHero from './components/LandingHero'
 import CustomIngestModal from './components/CustomIngestModal'
 import JudgeTourModal from './components/JudgeTourModal'
 import BentoMetricsBar from './components/BentoMetricsBar'
+import ConflictModal from './components/ConflictModal'
 import {
   generateHandoverMarkdown,
   generateHandoverAuditJson,
@@ -31,6 +32,7 @@ import {
   Terminal,
   Activity,
   Layers,
+  Search,
 } from 'lucide-react'
 
 const BACKEND_CANDIDATES = [
@@ -39,10 +41,7 @@ const BACKEND_CANDIDATES = [
   '/api',
 ]
 
-/**
- * Fetch wrapper with configurable timeout
- */
-const fetchWithTimeout = async (url, options = {}, timeoutMs = 1500) => {
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 2500) => {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -71,18 +70,24 @@ export default function App() {
   // Dual-role view mode inside studio: 'lead' | 'successor'
   const [role, setRole] = useState('lead')
 
+  // Authentication & RBAC state
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authToken, setAuthToken] = useState(null)
+
   // Left panel state
   const [activeSourceIndex, setActiveSourceIndex] = useState(0)
   const [highlightedSnippet, setHighlightedSnippet] = useState(null)
   const [highlightedSource, setHighlightedSource] = useState(null)
 
-  // Filter state
+  // Filter & Search state
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Modals
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false)
   const [isIngestModalOpen, setIsIngestModalOpen] = useState(false)
+  const [activeConflict, setActiveConflict] = useState(null)
 
   // 60-Second Judge Tour State
   const [isTourActive, setIsTourActive] = useState(false)
@@ -172,7 +177,84 @@ export default function App() {
     setViewMode('landing')
   }
 
-  // Custom Multi-Source Ingestion with graceful client-side fallback
+  // Authenticate Demo Account via Server API
+  const handleSwitchUserRole = async (targetRole) => {
+    if (healthStatus === 'Online' && activeApiBase) {
+      try {
+        const res = await fetchWithTimeout(
+          `${activeApiBase}/auth/demo-login`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: targetRole }),
+          },
+          2000
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setCurrentUser(data.user)
+          setAuthToken(data.access_token)
+          showToast(`// AUTH_OK: LOGGED_IN_AS [${data.user.role.toUpperCase()}]`)
+          await fetchProjectData(activeApiBase, data.access_token)
+          return
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+
+    // Client-side fallback
+    setCurrentUser({
+      id: `usr-${targetRole}`,
+      email: `${targetRole}@apex.dev`,
+      full_name: targetRole === 'project_reviewer' ? 'Jordan Lee (Lead Reviewer)' : 'Taylor Morgan (Successor)',
+      role: targetRole,
+    })
+    showToast(`// ROLE_SWITCH: [${targetRole.toUpperCase()}]`)
+  }
+
+  // Ingest Multi-File Documents (Outcome A)
+  const handleUploadFiles = async (files) => {
+    if (!files || files.length === 0) return
+    setLoading(true)
+
+    if (healthStatus === 'Online' && activeApiBase && project) {
+      try {
+        const formData = new FormData()
+        files.forEach((f) => formData.append('files', f))
+
+        const res = await fetchWithTimeout(
+          `${activeApiBase}/projects/${project.project_id}/documents/upload`,
+          {
+            method: 'POST',
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+            body: formData,
+          },
+          15000
+        )
+
+        if (res.ok) {
+          const data = await res.json()
+          setProject(data.project)
+          setActiveSourceIndex(0)
+          setLoading(false)
+          showToast(`// INGESTION_COMPLETE: ${files.length} FILE(S) PARSED`)
+          return
+        } else {
+          const errData = await res.json()
+          throw new Error(errData.detail || 'Upload failed')
+        }
+      } catch (err) {
+        showToast(`// UPLOAD_ERROR: ${err.message}`)
+      }
+    }
+
+    // Client fallback
+    setLoading(false)
+    showToast(`// PROCESSED: ${files.length} DOCUMENTS`)
+  }
+
+  // Custom Text Ingestion
   const handleIngestCustomText = async (payload) => {
     setLoading(true)
     let ingestedProject = null
@@ -183,16 +265,19 @@ export default function App() {
           `${activeApiBase}/ingest`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            },
             body: JSON.stringify(payload),
           },
-          3000
+          4000
         )
         if (res.ok) {
           ingestedProject = await res.json()
         }
       } catch (err) {
-        // Fallback to client-side extraction
+        // Fallback
       }
     }
 
@@ -209,7 +294,7 @@ export default function App() {
     showToast('// DYNAMIC_INGESTION_COMPLETE: CLAIMS_&_CITATIONS_RECONSTRUCTED')
   }
 
-  // Judge Demo Preset Switcher with standalone fallback
+  // Preset Switcher
   const handleSelectPreset = async (presetId) => {
     setIsResetting(true)
     let loadedData = null
@@ -221,7 +306,7 @@ export default function App() {
           loadedData = await res.json()
         }
       } catch (err) {
-        // Fallback to local preset data
+        // Fallback
       }
     }
 
@@ -241,7 +326,7 @@ export default function App() {
     )
   }
 
-  // Initialize backend connection with standalone fallback
+  // Initialize Backend Connection & Demo Login
   useEffect(() => {
     initBackend(true)
   }, [])
@@ -262,7 +347,7 @@ export default function App() {
           }
         }
       } catch (err) {
-        // Fallback to next candidate
+        // Next
       }
     }
 
@@ -270,10 +355,32 @@ export default function App() {
       setActiveApiBase(resolvedBase)
       setHealthStatus('Online')
       setError(null)
-      await fetchProjectData(resolvedBase)
-      if (!quiet) showToast('// LIVE_BACKEND_CONNECTED: PORT 8000')
+
+      // Automatic demo login as reviewer
+      try {
+        const loginRes = await fetchWithTimeout(
+          `${resolvedBase}/auth/demo-login`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'project_reviewer' }),
+          },
+          1500
+        )
+        if (loginRes.ok) {
+          const authData = await loginRes.json()
+          setCurrentUser(authData.user)
+          setAuthToken(authData.access_token)
+          await fetchProjectData(resolvedBase, authData.access_token)
+        } else {
+          await fetchProjectData(resolvedBase)
+        }
+      } catch (e) {
+        await fetchProjectData(resolvedBase)
+      }
+
+      if (!quiet) showToast('// LIVE_BACKEND_CONNECTED: SQLITE_PERSISTENCE')
     } else {
-      // Standalone mode engagement: Never freeze the UI
       setHealthStatus('Standalone')
       setActiveApiBase(null)
       setError(null)
@@ -284,7 +391,7 @@ export default function App() {
     setIsConnectingBackend(false)
   }
 
-  const fetchProjectData = async (base) => {
+  const fetchProjectData = async (base, token) => {
     const api = base || activeApiBase
     if (!api) {
       setProject((prev) => prev || getPresetData('apex-core-2026'))
@@ -292,15 +399,21 @@ export default function App() {
       return
     }
 
+    const t = token || authToken
     try {
       setLoading(true)
-      const res = await fetchWithTimeout(`${api}/sample`, {}, 2000)
+      const res = await fetchWithTimeout(
+        `${api}/sample`,
+        {
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+        },
+        2000
+      )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setProject(data)
       setError(null)
     } catch (err) {
-      // Graceful fallback to client preset data
       setHealthStatus('Standalone')
       setProject((prev) => prev || getPresetData('apex-core-2026'))
       setError(null)
@@ -318,7 +431,10 @@ export default function App() {
       try {
         const res = await fetchWithTimeout(
           `${activeApiBase}/sample/reset?preset_id=${presetId}`,
-          { method: 'POST' },
+          {
+            method: 'POST',
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          },
           2000
         )
         if (res.ok) {
@@ -326,7 +442,7 @@ export default function App() {
           resetDone = true
         }
       } catch (err) {
-        // Fallback to local reset
+        // Fallback
       }
     }
 
@@ -361,16 +477,22 @@ export default function App() {
       try {
         const res = await fetchWithTimeout(
           `${activeApiBase}/claims/${claimId}/toggle-approve`,
-          { method: 'POST' },
+          {
+            method: 'POST',
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          },
           1500
         )
         if (res.ok) {
           const result = await res.json()
           showToast(`// CLAIM_${claimId} -> ${result.is_approved ? 'APPROVED' : 'PENDING'}`)
           return
+        } else if (res.status === 403) {
+          showToast('// 403_FORBIDDEN: ONLY_REVIEWERS_CAN_APPROVE')
+          return
         }
       } catch (err) {
-        // Handled below
+        // Handled
       }
     }
 
@@ -396,17 +518,20 @@ export default function App() {
 
     if (healthStatus === 'Online' && activeApiBase) {
       try {
-        await fetchWithTimeout(
-          `${activeApiBase}/claims/${claimId}`,
+        const res = await fetchWithTimeout(
+          `${activeApiBase}/claims/${claimId}/toggle-sensitive`,
           {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_sensitive: nextVal }),
+            method: 'POST',
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
           },
           1500
         )
+        if (res.ok) {
+          showToast(nextVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
+          return
+        }
       } catch (err) {
-        // Silently handled
+        // Handled
       }
     }
 
@@ -431,7 +556,10 @@ export default function App() {
           `${activeApiBase}/claims/${claimId}`,
           {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            },
             body: JSON.stringify({ statement: newStatement }),
           },
           1500
@@ -442,37 +570,6 @@ export default function App() {
     }
 
     showToast(`// CLAIM_${claimId}_STATEMENT_UPDATED`)
-  }
-
-  // Update Status
-  const handleUpdateStatus = async (claimId, newStatus) => {
-    setProject((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        claims: prev.claims.map((c) =>
-          c.id === claimId ? { ...c, status: newStatus } : c
-        ),
-      }
-    })
-
-    if (healthStatus === 'Online' && activeApiBase) {
-      try {
-        await fetchWithTimeout(
-          `${activeApiBase}/claims/${claimId}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus }),
-          },
-          1500
-        )
-      } catch (err) {
-        // Handled
-      }
-    }
-
-    showToast(`// STATUS -> ${newStatus.toUpperCase()}`)
   }
 
   // Batch Approve All
@@ -487,13 +584,109 @@ export default function App() {
 
     if (healthStatus === 'Online' && activeApiBase) {
       try {
-        await fetchWithTimeout(`${activeApiBase}/claims/approve-all`, { method: 'POST' }, 1500)
+        await fetchWithTimeout(
+          `${activeApiBase}/claims/approve-all`,
+          {
+            method: 'POST',
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          },
+          1500
+        )
       } catch (err) {
         // Handled
       }
     }
 
     showToast('// ALL_CLAIMS_APPROVED_FOR_HANDOVER')
+  }
+
+  // Resolve Conflict Handler (Outcome C)
+  const handleResolveConflict = async (conflictId, payload) => {
+    if (healthStatus === 'Online' && activeApiBase && project) {
+      try {
+        const res = await fetchWithTimeout(
+          `${activeApiBase}/projects/${project.project_id}/conflicts/${conflictId}/resolve`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            },
+            body: JSON.stringify(payload),
+          },
+          2500
+        )
+        if (res.ok) {
+          showToast('// CONFLICT_RESOLVED: AUDIT_LOG_RECORDED')
+          await fetchProjectData(activeApiBase)
+          return
+        }
+      } catch (err) {
+        showToast(`// RESOLUTION_ERROR: ${err.message}`)
+      }
+    }
+
+    // Client update
+    setProject((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        conflicts: (prev.conflicts || []).map((c) =>
+          c.id === conflictId
+            ? { ...c, status: payload.status, resolution_choice: payload.resolution_choice, rationale: payload.rationale }
+            : c
+        ),
+      }
+    })
+    showToast('// CONFLICT_RESOLVED_CLIENT')
+  }
+
+  // Update Successor Checklist Task (Outcome F)
+  const handleUpdateChecklistTask = async (taskKey, nextStatus) => {
+    if (healthStatus === 'Online' && activeApiBase && project) {
+      try {
+        const res = await fetchWithTimeout(
+          `${activeApiBase}/projects/${project.project_id}/checklist/${taskKey}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            },
+            body: JSON.stringify({ status: nextStatus }),
+          },
+          2000
+        )
+        if (res.ok) {
+          const updatedItem = await res.json()
+          setProject((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              checklist: (prev.checklist || []).map((item) =>
+                item.task_key === taskKey ? updatedItem : item
+              ),
+            }
+          })
+          showToast(`// CHECKLIST: ${taskKey} -> ${nextStatus.toUpperCase()}`)
+          return
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+
+    // Client update
+    setProject((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        checklist: (prev.checklist || []).map((item) =>
+          item.task_key === taskKey ? { ...item, status: nextStatus } : item
+        ),
+      }
+    })
+    showToast(`// CHECKLIST: ${taskKey} -> ${nextStatus.toUpperCase()}`)
   }
 
   // Inspect Evidence
@@ -560,20 +753,31 @@ export default function App() {
     return { total, approved, pending, conflicts, sensitive }
   }, [project])
 
-  // Filtered claims
+  // Filtered claims with search
   const filteredClaims = useMemo(() => {
     if (!project || !project.claims) return []
     return project.claims.filter((c) => {
+      // Search query filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        const matchesStatement = c.statement?.toLowerCase().includes(query)
+        const matchesExcerpt = c.exact_source_excerpt?.toLowerCase().includes(query)
+        const matchesSource = c.source_filename?.toLowerCase().includes(query)
+        if (!matchesStatement && !matchesExcerpt && !matchesSource) return false
+      }
+
       if (selectedCategoryFilter === 'all') return true
       if (selectedCategoryFilter === 'approved') return c.is_approved
       if (selectedCategoryFilter === 'conflicts') return c.status === 'conflicting'
       if (selectedCategoryFilter === 'pending') return !c.is_approved
       if (selectedCategoryFilter === 'sensitive') return c.is_sensitive
+      if (selectedCategoryFilter === 'supported') return c.validation_status === 'supported'
+      if (selectedCategoryFilter === 'needs_review') return c.validation_status === 'needs_human_review'
       return c.category === selectedCategoryFilter
     })
-  }, [project, selectedCategoryFilter])
+  }, [project, selectedCategoryFilter, searchQuery])
 
-  // Successor claims
+  // Successor claims (approved & non-sensitive)
   const successorClaims = useMemo(() => {
     if (!project || !project.claims) return []
     return project.claims.filter((c) => c.is_approved && !c.is_sensitive)
@@ -581,17 +785,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-neutral-200 flex flex-col font-sans selection:bg-[#00f0ff]/30 selection:text-[#00f0ff] relative overflow-x-hidden at-grid-bg">
-      {/* 1. ACTIVE THEORY ATMOSPHERIC CHROMA GLOW AURA */}
+      {/* Glow Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Top-Right Neon Rose Ambient Glow Point */}
         <div
           className="absolute -top-[15%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[150px] animate-at-aura"
           style={{
             background: 'radial-gradient(circle, rgba(255, 0, 127, 0.12) 0%, transparent 65%)',
           }}
         />
-
-        {/* Left Electric Cerulean Cyan Glow Point */}
         <div
           className="absolute top-[18%] -left-[12%] w-[55vw] h-[55vw] rounded-full blur-[150px] animate-at-aura"
           style={{
@@ -601,7 +802,7 @@ export default function App() {
         />
       </div>
 
-      {/* Minimalist Floating Telemetry Toast */}
+      {/* Floating Telemetry Toast */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-black/90 backdrop-blur-2xl border border-cyan-400/40 text-cyan-300 text-xs px-4 py-2.5 rounded-lg shadow-[0_0_20px_rgba(0,240,255,0.25)] flex items-center gap-2.5 font-mono animate-fade-in tracking-wider">
           <span className="w-1.5 h-1.5 bg-[#00f0ff] animate-ping" />
@@ -609,7 +810,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Screen 1: High-Impact Cyberpunk Showcase Landing & Dossier */}
+      {/* Screen 1: Landing Hero & Team Showcase */}
       {viewMode === 'landing' ? (
         <div className="relative z-10 flex flex-col min-h-screen">
           <LandingHero
@@ -619,14 +820,15 @@ export default function App() {
           />
         </div>
       ) : (
-        /* Screen 2: Interactive Handover Studio & Triage Dashboard */
+        /* Screen 2: Handover Studio */
         <div className="relative z-10 flex flex-col min-h-screen">
-          {/* Top Bar */}
           <Header
             project={project}
             healthStatus={healthStatus}
             role={role}
             setRole={setRole}
+            currentUser={currentUser}
+            onSwitchUserRole={handleSwitchUserRole}
             onResetProject={handleResetProject}
             onSelectPreset={handleSelectPreset}
             onLockHandover={() => setIsLockModalOpen(true)}
@@ -642,7 +844,6 @@ export default function App() {
             isResetting={isResetting}
           />
 
-          {/* Body Workspace */}
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             {/* Loading Indicator */}
             {loading && !project && (
@@ -654,7 +855,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Non-blocking Status Notice if error exists */}
+            {/* Error Notice */}
             {error && (
               <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs font-mono flex items-center justify-between gap-3 shadow-lg">
                 <div className="flex items-center gap-2">
@@ -671,27 +872,26 @@ export default function App() {
               </div>
             )}
 
-            {/* Active Handover View */}
+            {/* Workspace Content */}
             {project && (
               <>
                 {/* REVIEWER / LEAD MODE */}
                 {role === 'lead' && (
                   <div className="space-y-8">
-                    {/* Modern Bento HUD Metrics Bar */}
                     <BentoMetricsBar
                       stats={stats}
                       selectedCategoryFilter={selectedCategoryFilter}
                       onSelectFilter={(filterId) => setSelectedCategoryFilter(filterId)}
                     />
 
-                    {/* Executive Synthesis Tactical Glass Panel */}
+                    {/* Executive Synthesis Panel */}
                     <div className="p-6 sm:p-7 rounded-2xl bg-[#0c0d14]/75 backdrop-blur-xl border border-white/10 hover:border-cyan-400/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative shadow-lg">
                       <div className="space-y-2 max-w-3xl">
                         <div className="flex items-center gap-2.5 text-xs font-mono tracking-[0.18em] text-cyan-400 uppercase font-bold">
                           <span>// 01. RECONSTRUCTION_SYNTHESIS</span>
                           <span className="text-neutral-700">&bull;</span>
                           <span className="text-neutral-400">
-                            {project.claims.length} CLAIMS &bull; {project.raw_sources.length} ARTIFACTS
+                            {project.claims?.length || 0} CLAIMS &bull; {project.raw_sources?.length || 0} ARTIFACTS
                           </span>
                         </div>
                         <p className="font-body text-sm text-neutral-300 leading-relaxed">
@@ -699,7 +899,7 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex items-center gap-3">
                         <button
                           type="button"
                           onClick={handleApproveAll}
@@ -713,7 +913,7 @@ export default function App() {
 
                     {/* Two-Column Split Workspace */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
-                      {/* LEFT PANEL: Source Preview & Evidence Anchors (5 cols) */}
+                      {/* Left: Source Artifacts Viewer (5 cols) */}
                       <div className="lg:col-span-5 h-[800px] sticky top-24">
                         <SourceViewer
                           rawSources={project.raw_sources}
@@ -725,20 +925,41 @@ export default function App() {
                         />
                       </div>
 
-                      {/* RIGHT PANEL: Claims & Human Review Stream (7 cols) */}
+                      {/* Right: Claims Stream & Triage (7 cols) */}
                       <div className="lg:col-span-7 space-y-5">
-                        {/* Active Theory Tactical Filter Bar */}
-                        <div className="bg-[#0c0d14]/80 backdrop-blur-xl p-2 rounded-xl border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs shadow-md">
-                          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 font-mono text-xs tracking-[0.18em]">
-                            <span className="text-neutral-500 px-2 uppercase text-[10px] font-bold">
+                        {/* Search and Filters */}
+                        <div className="bg-[#0c0d14]/80 backdrop-blur-xl p-3 rounded-xl border border-white/10 space-y-2.5 shadow-md">
+                          {/* Search Input */}
+                          <div className="relative">
+                            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="Search claims, excerpts, or document filenames..."
+                              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none placeholder:text-neutral-600"
+                            />
+                            {searchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Filter Tabs */}
+                          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 font-mono text-xs tracking-wider">
+                            <span className="text-neutral-500 px-1 uppercase text-[10px] font-bold">
                               // FILTER:
                             </span>
 
                             {[
-                              { id: 'all', label: `ALL (${project.claims.length})` },
-                              { id: 'decision', label: 'DECISIONS' },
-                              { id: 'blocker', label: 'BLOCKERS' },
-                              { id: 'next_action', label: 'NEXT_ACTIONS' },
+                              { id: 'all', label: `ALL (${project.claims?.length || 0})` },
+                              { id: 'supported', label: 'SUPPORTED' },
+                              { id: 'needs_review', label: 'NEEDS_REVIEW' },
                               { id: 'conflicts', label: `CONFLICTS (${stats.conflicts})` },
                               { id: 'pending', label: `PENDING (${stats.pending})` },
                               { id: 'sensitive', label: `REDACTED (${stats.sensitive})` },
@@ -747,7 +968,7 @@ export default function App() {
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setSelectedCategoryFilter(tab.id)}
-                                className={`px-3 py-1.5 rounded-lg font-bold uppercase transition shrink-0 ${
+                                className={`px-2.5 py-1 rounded-lg font-bold uppercase transition shrink-0 text-[11px] ${
                                   selectedCategoryFilter === tab.id
                                     ? 'bg-[#00f0ff]/15 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]'
                                     : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.04]'
@@ -757,13 +978,9 @@ export default function App() {
                               </button>
                             ))}
                           </div>
-
-                          <span className="text-xs text-neutral-500 font-mono hidden sm:inline px-2.5 shrink-0 tracking-[0.18em] font-bold">
-                            [{filteredClaims.length}_ITEMS]
-                          </span>
                         </div>
 
-                        {/* Claims Stream Cards */}
+                        {/* Claims List */}
                         <div className="space-y-4">
                           {filteredClaims.length === 0 ? (
                             <div className="p-16 rounded-2xl bg-[#0c0d14]/50 border border-white/5 text-center text-neutral-500 text-xs font-mono tracking-widest uppercase">
@@ -774,11 +991,17 @@ export default function App() {
                               <ClaimCard
                                 key={claim.id}
                                 claim={claim}
+                                isReviewer={role === 'lead'}
                                 onToggleApprove={handleToggleApprove}
                                 onToggleSensitive={handleToggleSensitive}
                                 onUpdateStatement={handleUpdateStatement}
-                                onUpdateStatus={handleUpdateStatus}
                                 onInspectEvidence={handleInspectEvidence}
+                                onOpenConflictModal={() => {
+                                  const conf = (project.conflicts || []).find(
+                                    (c) => c.claim_id_1 === claim.id || c.claim_id_2 === claim.id
+                                  )
+                                  if (conf) setActiveConflict(conf)
+                                }}
                               />
                             ))
                           )}
@@ -788,14 +1011,17 @@ export default function App() {
                   </div>
                 )}
 
-                {/* SUCCESSOR VIEW */}
+                {/* SUCCESSOR VIEW (Day 1-30 Sanitized & Persistent Checklist) */}
                 {role === 'successor' && (
                   <SuccessorView
                     project={project}
                     approvedClaims={successorClaims}
+                    checklist={project.checklist || []}
+                    onUpdateChecklistTask={handleUpdateChecklistTask}
                     onExportMarkdown={handleExportMarkdown}
                     onExportJson={handleExportJson}
                     onInspectEvidence={handleInspectEvidence}
+                    onOpenConflictModal={(conf) => setActiveConflict(conf)}
                   />
                 )}
               </>
@@ -804,16 +1030,49 @@ export default function App() {
         </div>
       )}
 
-      {/* MODALS */}
+      {/* Side-by-Side Conflict Resolution Modal */}
+      <ConflictModal
+        isOpen={!!activeConflict}
+        conflict={activeConflict}
+        onClose={() => setActiveConflict(null)}
+        onResolveConflict={handleResolveConflict}
+        isReviewer={role === 'lead'}
+      />
+
+      {/* Lock Handover Modal */}
       <FinalizeModal
         isOpen={isLockModalOpen}
         onClose={() => setIsLockModalOpen(false)}
         stats={stats}
         project={project}
-        onLockAndSwitch={() => {
+        onLockAndSwitch={async () => {
           setIsLockModalOpen(false)
+          // Reviewer locks handover
+          if (healthStatus === 'Online' && activeApiBase && project) {
+            try {
+              const res = await fetchWithTimeout(
+                `${activeApiBase}/projects/${project.project_id}/approve`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+                  },
+                  body: JSON.stringify({ status: 'approved' }),
+                },
+                2000
+              )
+              if (!res.ok) {
+                const err = await res.json()
+                showToast(`// LOCK_REJECTED: ${err.detail || 'Error'}`)
+                return
+              }
+            } catch (err) {
+              // Fallback
+            }
+          }
           setRole('successor')
-          showToast('// HANDOVER_LOCKED -> SUCCESSOR_VIEW')
+          showToast('// HANDOVER_APPROVED_&_LOCKED -> SUCCESSOR_VIEW')
         }}
         onExportMarkdown={() => {
           setIsLockModalOpen(false)
@@ -834,7 +1093,8 @@ export default function App() {
         isOpen={isIngestModalOpen}
         onClose={() => setIsIngestModalOpen(false)}
         onIngestCustomText={handleIngestCustomText}
-        onLoadSampleDataset={handleResetProject}
+        onUploadFiles={handleUploadFiles}
+        projectId={project?.project_id || 'apex-core-2026'}
       />
 
       <JudgeTourModal

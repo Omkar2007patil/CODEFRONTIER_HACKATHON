@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import {
   FileText,
   Upload,
@@ -8,6 +8,11 @@ import {
   Terminal,
   ArrowRight,
   CheckCircle2,
+  AlertTriangle,
+  FileCode,
+  FileType,
+  Files,
+  Trash2,
 } from 'lucide-react'
 
 const SAMPLE_CUSTOM_SNIPPET = `# Architecture Notes & Sprint Review - Apex Core
@@ -19,35 +24,79 @@ Author: Alex Chen (Departing Lead)
 We evaluated RabbitMQ vs Kafka for internal event dispatching. RabbitMQ is selected for audit event routing due to low operational overhead and reliable dead-letter exchange support.
 
 ## Critical Staging Blocker
-- STAGING INCIDENT: Auth token verification times out under high load.
+- STAGING INCIDENT: Auth token verification times out under sustained load (APEX-502).
 - Owner: UNASSIGNED. Ticket logged as APEX-502.
 
 ## Next Actions
 - Step 1: Deploy RabbitMQ broker on staging cluster.
-- Step 2: Audit JWT expiration settings.`
+- Step 2: Audit JWT token expiration settings.`
 
 export default function CustomIngestModal({
   isOpen,
   onClose,
   onIngestCustomText,
-  onLoadSampleDataset,
+  onUploadFiles,
+  projectId = 'apex-core-2026',
 }) {
+  const [activeTab, setActiveTab] = useState('files') // 'files' | 'paste'
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [uploadProgress, setUploadProgress] = useState(null)
+  const [uploadError, setUploadError] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const fileInputRef = useRef(null)
+
+  // Text paste state
   const [projectName, setProjectName] = useState('Apex Enterprise Gateway')
   const [outgoingMember, setOutgoingMember] = useState('Alex Chen (Lead Architect)')
   const [intendedRole, setIntendedRole] = useState('Incoming Full-Stack Engineer')
   const [rawText, setRawText] = useState('')
   const [filename, setFilename] = useState('handover_notes.md')
-  const [isProcessing, setIsProcessing] = useState(false)
 
   if (!isOpen) return null
 
-  const handleProcessCustom = async () => {
-    if (!rawText.trim()) {
-      alert('Please enter or paste raw document text.')
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files)
+      setSelectedFiles((prev) => [...prev, ...filesArray])
+      setUploadError(null)
+    }
+  }
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleUploadSubmit = async () => {
+    if (selectedFiles.length === 0) {
+      setUploadError('Please select at least one document to upload.')
       return
     }
 
     setIsProcessing(true)
+    setUploadProgress('Uploading and parsing documents (extracting claims & provenance)...')
+    setUploadError(null)
+
+    try {
+      if (onUploadFiles) {
+        await onUploadFiles(selectedFiles)
+      }
+      onClose()
+    } catch (err) {
+      setUploadError(`Upload failed: ${err.message}`)
+    } finally {
+      setIsProcessing(false)
+      setUploadProgress(null)
+    }
+  }
+
+  const handleProcessCustomText = async () => {
+    if (!rawText.trim()) {
+      setUploadError('Please enter or paste raw document text.')
+      return
+    }
+
+    setIsProcessing(true)
+    setUploadError(null)
     try {
       await onIngestCustomText({
         project_name: projectName,
@@ -58,14 +107,16 @@ export default function CustomIngestModal({
       })
       onClose()
     } catch (err) {
-      alert(`Error extracting claims: ${err.message}`)
+      setUploadError(`Error extracting claims: ${err.message}`)
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const handleUseSnippet = () => {
-    setRawText(SAMPLE_CUSTOM_SNIPPET)
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   return (
@@ -73,7 +124,7 @@ export default function CustomIngestModal({
       <div className="fixed inset-0" onClick={onClose} />
 
       <div className="relative z-10 w-full max-w-3xl bg-[#050507] border border-white/10 hover:border-cyan-400/40 rounded-2xl shadow-[0_0_60px_rgba(0,240,255,0.18)] overflow-hidden my-auto transition-all duration-300 corner-crosshair">
-        {/* Subtle Top Accent Ribbon */}
+        {/* Top Accent Ribbon */}
         <div className="h-1 w-full bg-gradient-to-r from-cyan-400 via-sky-400 to-[#ff007f] shadow-[0_0_10px_#ff007f]" />
 
         {/* Modal Header */}
@@ -83,10 +134,10 @@ export default function CustomIngestModal({
               // DATA_INGESTION_GATEWAY
             </span>
             <h3 className="text-xl font-heading font-bold text-white tracking-tight uppercase">
-              Ingest & Reconstruct Project Knowledge
+              Ingest Multi-Format Knowledge Documents
             </h3>
-            <p className="font-body text-sm text-neutral-300 leading-relaxed">
-              Paste raw documentation or load our prepared evaluation dataset with intentional conflict detection.
+            <p className="font-body text-xs text-neutral-400 leading-relaxed">
+              Upload project documents (TXT, MD, PDF, DOCX, CSV, JSON) to extract evidence-linked claims and detect cross-document contradictions.
             </p>
           </div>
 
@@ -99,164 +150,222 @@ export default function CustomIngestModal({
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 sm:p-7 space-y-6 font-mono text-xs">
-          {/* Quick Choice: Load Preset 1 or Preset 2 */}
-          <div className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white uppercase flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>// JUDGE DEMO PRESET EVALUATION</span>
-              </span>
-              <span className="text-[10px] text-neutral-500 uppercase tracking-widest">
-                ONE-CLICK SCENARIO LOADERS
-              </span>
+        {/* Tab Switcher */}
+        <div className="px-6 pt-4 flex items-center gap-3 border-b border-white/5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('files')}
+            className={`flex items-center gap-2 pb-3 px-1 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition ${
+              activeTab === 'files'
+                ? 'border-cyan-400 text-cyan-300'
+                : 'border-transparent text-neutral-500 hover:text-neutral-300'
+            }`}
+          >
+            <Files className="w-4 h-4" />
+            <span>Multi-File Upload (PDF, DOCX, CSV, TXT, JSON)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('paste')}
+            className={`flex items-center gap-2 pb-3 px-1 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition ${
+              activeTab === 'paste'
+                ? 'border-cyan-400 text-cyan-300'
+                : 'border-transparent text-neutral-500 hover:text-neutral-300'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Direct Text / Markdown Paste</span>
+          </button>
+        </div>
+
+        {/* Error / Feedback Banner */}
+        {uploadError && (
+          <div className="mx-6 mt-4 p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
+        {/* Tab 1: Multi-File Upload */}
+        {activeTab === 'files' && (
+          <div className="p-6 space-y-5">
+            {/* Drag & Drop Area */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-white/15 hover:border-cyan-400/50 bg-white/[0.02] hover:bg-cyan-500/[0.03] rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition group"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.markdown,.pdf,.docx,.csv,.json"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                <Upload className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h4 className="text-white font-mono text-sm font-bold uppercase tracking-wider">
+                Click or Drop Project Files Here
+              </h4>
+              <p className="text-neutral-400 font-body text-xs mt-1">
+                Supported formats: <strong className="text-cyan-300">TXT, Markdown, PDF, DOCX, CSV, JSON</strong> (up to 15MB each)
+              </p>
+              <p className="text-neutral-500 font-mono text-[10px] mt-2">
+                // AUTOMATIC_PAGE_LINE_ROW_PROVENANCE_INDEXING
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  onLoadSampleDataset('apex-core-2026')
-                  onClose()
-                }}
-                className="p-3 rounded-lg bg-black/80 border border-rose-500/30 hover:border-rose-400 hover:shadow-[0_0_15px_rgba(255,0,127,0.25)] text-left transition active:scale-95 group"
-              >
-                <div className="text-rose-300 font-bold text-xs uppercase flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-rose-400" />
-                  <span>PRESET 1: ENTERPRISE GATEWAY</span>
+            {/* Selected Files List */}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                  <span>Selected Documents ({selectedFiles.length})</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFiles([])}
+                    className="text-rose-400 hover:text-rose-300"
+                  >
+                    Clear All
+                  </button>
                 </div>
-                <p className="text-[10px] text-neutral-400 font-sans mt-1">
-                  Active Redis blocker + ADR release date conflict between Nov 10 freeze & Nov 15 launch.
-                </p>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  onLoadSampleDataset('apex-auth-clean')
-                  onClose()
-                }}
-                className="p-3 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,240,255,0.25)] text-left transition active:scale-95 group"
-              >
-                <div className="text-cyan-300 font-bold text-xs uppercase flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>PRESET 2: CLEAN AUTH HANDOFF</span>
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 font-mono text-xs">
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.03] border border-white/5 text-neutral-300"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <FileType className="w-4 h-4 text-cyan-400 shrink-0" />
+                        <span className="truncate font-semibold text-white">{file.name}</span>
+                        <span className="text-[10px] text-neutral-500">({formatFileSize(file.size)})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="text-neutral-500 hover:text-rose-400 p-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-[10px] text-neutral-400 font-sans mt-1">
-                  All-green, Ed25519 verified, zero open blockers, ready for instant successor locking.
-                </p>
-              </button>
-            </div>
-          </div>
+              </div>
+            )}
 
-          <div className="flex items-center gap-3 text-neutral-600 font-bold text-[10px] tracking-widest uppercase">
-            <div className="flex-1 h-px bg-white/10" />
-            <span>OR PASTE YOUR OWN DOCUMENTATION</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
-
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-[10px] text-neutral-400 uppercase tracking-wider block">
-                Project Name
-              </label>
-              <input
-                type="text"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-neutral-200 outline-none focus:border-cyan-400 transition"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] text-neutral-400 uppercase tracking-wider block">
-                Outgoing Lead
-              </label>
-              <input
-                type="text"
-                value={outgoingMember}
-                onChange={(e) => setOutgoingMember(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-neutral-200 outline-none focus:border-cyan-400 transition"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] text-neutral-400 uppercase tracking-wider block">
-                Successor Target Role
-              </label>
-              <input
-                type="text"
-                value={intendedRole}
-                onChange={(e) => setIntendedRole(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-neutral-200 outline-none focus:border-cyan-400 transition"
-              />
-            </div>
-          </div>
-
-          {/* Raw Text Box */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <label className="text-neutral-400 uppercase tracking-wider block">
-                Raw Artifact / Markdown Content
-              </label>
-              <button
-                type="button"
-                onClick={handleUseSnippet}
-                className="text-cyan-400 hover:text-cyan-300 text-[10px] underline uppercase tracking-wider"
-              >
-                + Insert Sample ADR Snippet
-              </button>
-            </div>
-
-            <textarea
-              rows={8}
-              value={rawText}
-              onChange={(e) => setRawText(e.target.value)}
-              placeholder="# Paste project notes, meeting retro, architecture decisions, or sprint tasks here..."
-              className="w-full bg-black border border-white/10 rounded-xl p-3.5 text-xs text-neutral-200 font-mono outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition leading-relaxed"
-            />
-          </div>
-
-          {/* Action Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
-            <span className="text-[10px] text-neutral-500 uppercase tracking-widest">
-              // PARSES DECISIONS, BLOCKERS, AND NEXT ACTIONS AUTOMATICALLY
-            </span>
-
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            {/* Ingestion Submit */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-lg bg-black hover:bg-white/[0.04] text-neutral-400 border border-white/10 text-xs uppercase tracking-wider transition"
+                className="px-4 py-2 rounded-lg text-xs font-mono text-neutral-400 hover:text-white bg-white/[0.03] border border-white/10"
               >
                 CANCEL
               </button>
-
               <button
                 type="button"
-                onClick={handleProcessCustom}
-                disabled={isProcessing}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] text-black font-bold text-xs uppercase tracking-wider transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isProcessing || selectedFiles.length === 0}
+                onClick={handleUploadSubmit}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-sky-400 text-black font-mono font-bold text-xs uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] disabled:opacity-50 transition active:scale-95"
               >
                 {isProcessing ? (
                   <>
-                    <span className="animate-spin w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full" />
-                    <span>EXTRACTING CLAIMS...</span>
+                    <Zap className="w-3.5 h-3.5 animate-spin" />
+                    <span>PROCESSING...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-3.5 h-3.5 text-black" />
-                    <span>[ 🚀 EXTRACT & RECONSTRUCT ]</span>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>INGEST & EXTRACT CLAIMS</span>
                   </>
                 )}
               </button>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Tab 2: Direct Text Paste */}
+        {activeTab === 'paste' && (
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
+                  Project Title
+                </label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
+                  Outgoing Member
+                </label>
+                <input
+                  type="text"
+                  value={outgoingMember}
+                  onChange={(e) => setOutgoingMember(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
+                  Filename
+                </label>
+                <input
+                  type="text"
+                  value={filename}
+                  onChange={(e) => setFilename(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] font-mono uppercase text-neutral-400">
+                  Raw Documentation / Notes
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setRawText(SAMPLE_CUSTOM_SNIPPET)}
+                  className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 underline"
+                >
+                  Insert Sample Snippet
+                </button>
+              </div>
+              <textarea
+                rows={8}
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+                placeholder="Paste architectural notes, ADRs, meeting logs, or sprint tasks here..."
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none leading-relaxed resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-xs font-mono text-neutral-400 hover:text-white bg-white/[0.03] border border-white/10"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing || !rawText.trim()}
+                onClick={handleProcessCustomText}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-sky-400 text-black font-mono font-bold text-xs uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] disabled:opacity-50 transition active:scale-95"
+              >
+                {isProcessing ? 'PARSING...' : 'EXTRACT CLAIMS'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-
