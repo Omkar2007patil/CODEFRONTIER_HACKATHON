@@ -1,20 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react'
+import Sidebar from './components/Sidebar'
 import Header from './components/Header'
-import NavigationTabBar from './components/NavigationTabBar'
-import OverviewDashboard from './components/OverviewDashboard'
-import ConflictWorkspace from './components/ConflictWorkspace'
-import IngestionWorkspace from './components/IngestionWorkspace'
-import ReviewerAuditWorkspace from './components/ReviewerAuditWorkspace'
-import SourceViewer from './components/SourceViewer'
-import ClaimCard from './components/ClaimCard'
-import SuccessorView from './components/SuccessorView'
-import FinalizeModal from './components/FinalizeModal'
-import TeamPortfolio from './components/TeamPortfolio'
-import LandingHero from './components/LandingHero'
-import CustomIngestModal from './components/CustomIngestModal'
-import JudgeTourModal from './components/JudgeTourModal'
-import BentoMetricsBar from './components/BentoMetricsBar'
+import CommandCenter from './components/CommandCenter'
+import DocumentsWorkspace from './components/DocumentsWorkspace'
+import EvidenceExplorer from './components/EvidenceExplorer'
+import ConflictLab from './components/ConflictLab'
+import ReviewApprovals from './components/ReviewApprovals'
+import TrustSecurity from './components/TrustSecurity'
+import SuccessorWorkspace from './components/SuccessorWorkspace'
+import AuditHistory from './components/AuditHistory'
 import ConflictModal from './components/ConflictModal'
+import FinalizeModal from './components/FinalizeModal'
+import JudgeTourModal from './components/JudgeTourModal'
+import TeamPortfolio from './components/TeamPortfolio'
 import {
   generateHandoverMarkdown,
   generateHandoverAuditJson,
@@ -25,20 +23,7 @@ import {
   getPresetData,
   extractClientSideHandover,
 } from './data/mockDatasets'
-import {
-  ShieldCheck,
-  UserCheck,
-  Filter,
-  CheckCheck,
-  AlertTriangle,
-  AlertCircle,
-  EyeOff,
-  Sparkles,
-  Terminal,
-  Activity,
-  Layers,
-  Search,
-} from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 
 const rawEnvApi = import.meta.env.VITE_API_BASE_URL
 const normalizedEnvApi = rawEnvApi
@@ -75,30 +60,19 @@ export default function App() {
   const [isConnectingBackend, setIsConnectingBackend] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  // Top-level screen state: 'landing' (showcase) | 'studio' (workspace)
-  const [viewMode, setViewMode] = useState('studio')
-  const [activeTab, setActiveTab] = useState('overview')
-
-  // Dual-role view mode inside studio: 'lead' | 'successor'
-  const [role, setRole] = useState('lead')
+  // 8 Navigation Tabs: 'command_center' | 'documents' | 'evidence' | 'conflicts' | 'review' | 'security' | 'successor' | 'audit'
+  const [activeTab, setActiveTab] = useState('command_center')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Authentication & RBAC state
   const [currentUser, setCurrentUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
 
-  // Left panel state
-  const [activeSourceIndex, setActiveSourceIndex] = useState(0)
-  const [highlightedSnippet, setHighlightedSnippet] = useState(null)
-  const [highlightedSource, setHighlightedSource] = useState(null)
-
-  // Filter & Search state
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-
   // Modals
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false)
-  const [isIngestModalOpen, setIsIngestModalOpen] = useState(false)
   const [activeConflict, setActiveConflict] = useState(null)
 
   // 60-Second Judge Tour State
@@ -114,35 +88,25 @@ export default function App() {
   // Tour Step Controller
   const applyTourStepActions = (stepIndex) => {
     if (stepIndex === 0) {
-      setRole('lead')
-      setActiveTab('evidence')
-      if (project?.claims?.[0]?.evidence) {
-        handleInspectEvidence(project.claims[0].evidence)
-      }
-      showToast('// TOUR: STEP 1 - EVIDENCE CITATION ANCHORED')
+      handleSwitchUserRole('project_reviewer')
+      setActiveTab('command_center')
+      showToast('// TOUR: STEP 1 - COMMAND CENTER & READINESS INDEX')
     } else if (stepIndex === 1) {
-      setRole('lead')
+      handleSwitchUserRole('project_reviewer')
       setActiveTab('conflicts')
-      const conflictClaim = project?.claims?.find((c) => c.status === 'conflicting')
-      if (conflictClaim?.evidence) {
-        handleInspectEvidence(conflictClaim.evidence)
-      }
-      showToast('// TOUR: STEP 2 - TIMELINE CONTRADICTION DETECTED')
+      showToast('// TOUR: STEP 2 - TIMELINE CONTRADICTION TRIAGE')
     } else if (stepIndex === 2) {
-      setRole('lead')
-      setActiveTab('audit')
-      setHighlightedSnippet(null)
-      setHighlightedSource(null)
-      showToast('// TOUR: STEP 3 - REVIEWER TRIAGE WORKFLOW')
+      handleSwitchUserRole('project_reviewer')
+      setActiveTab('evidence')
+      showToast('// TOUR: STEP 3 - ANCHORED CITATION & PROVENANCE')
     } else if (stepIndex === 3) {
-      setRole('successor')
+      handleSwitchUserRole('incoming_successor')
       setActiveTab('successor')
       showToast('// TOUR: STEP 4 - SUCCESSOR DAY-1 ONBOARDING')
     }
   }
 
   const handleStartTour = () => {
-    setViewMode('studio')
     setIsTourActive(true)
     setTourStep(0)
     applyTourStepActions(0)
@@ -168,30 +132,6 @@ export default function App() {
   const handleJumpToTourStep = (idx) => {
     setTourStep(idx)
     applyTourStepActions(idx)
-  }
-
-  // Top-level screen handlers
-  const handleLaunchDemo = async () => {
-    setViewMode('studio')
-    setActiveTab('overview')
-    if (!project) {
-      if (healthStatus === 'Online' && activeApiBase) {
-        await fetchProjectData(activeApiBase)
-      } else {
-        setProject(getPresetData('apex-core-2026'))
-        setLoading(false)
-      }
-    }
-    showToast('// STUDIO_ENGAGED: DEMO DATASET READY')
-  }
-
-  const handleCustomInput = () => {
-    setViewMode('studio')
-    setIsIngestModalOpen(true)
-  }
-
-  const handleBackToLanding = () => {
-    setViewMode('landing')
   }
 
   // Authenticate Demo Account via Server API
@@ -224,13 +164,18 @@ export default function App() {
     setCurrentUser({
       id: `usr-${targetRole}`,
       email: `${targetRole}@apex.dev`,
-      full_name: targetRole === 'project_reviewer' ? 'Jordan Lee (Lead Reviewer)' : 'Taylor Morgan (Successor)',
+      full_name:
+        targetRole === 'project_reviewer'
+          ? 'Jordan Lee (Lead Reviewer)'
+          : targetRole === 'incoming_successor'
+          ? 'Taylor Morgan (Successor)'
+          : 'Alex Chen (Outgoing Contributor)',
       role: targetRole,
     })
     showToast(`// ROLE_SWITCH: [${targetRole.toUpperCase()}]`)
   }
 
-  // Ingest Multi-File Documents (Outcome A)
+  // Ingest Multi-File Documents
   const handleUploadFiles = async (files) => {
     if (!files || files.length === 0) return
     setLoading(true)
@@ -253,8 +198,8 @@ export default function App() {
         if (res.ok) {
           const data = await res.json()
           setProject(data.project)
-          setActiveSourceIndex(0)
           setLoading(false)
+          setActiveTab('documents')
           showToast(`// INGESTION_COMPLETE: ${files.length} FILE(S) PARSED`)
           return
         } else {
@@ -266,7 +211,6 @@ export default function App() {
       }
     }
 
-    // Client fallback
     setLoading(false)
     showToast(`// PROCESSED: ${files.length} DOCUMENTS`)
   }
@@ -293,9 +237,7 @@ export default function App() {
         if (res.ok) {
           ingestedProject = await res.json()
         }
-      } catch (err) {
-        // Fallback
-      }
+      } catch (err) {}
     }
 
     if (!ingestedProject) {
@@ -303,11 +245,8 @@ export default function App() {
     }
 
     setProject(ingestedProject)
-    setIsIngestModalOpen(false)
-    setActiveSourceIndex(0)
-    setHighlightedSnippet(null)
-    setHighlightedSource(null)
     setLoading(false)
+    setActiveTab('evidence')
     showToast('// DYNAMIC_INGESTION_COMPLETE: CLAIMS_&_CITATIONS_RECONSTRUCTED')
   }
 
@@ -322,9 +261,7 @@ export default function App() {
         if (res.ok) {
           loadedData = await res.json()
         }
-      } catch (err) {
-        // Fallback
-      }
+      } catch (err) {}
     }
 
     if (!loadedData) {
@@ -332,10 +269,8 @@ export default function App() {
     }
 
     setProject(loadedData)
-    setActiveSourceIndex(0)
-    setHighlightedSnippet(null)
-    setHighlightedSource(null)
     setIsResetting(false)
+    setActiveTab('command_center')
     showToast(
       presetId === 'apex-auth-clean'
         ? '// LOADED: PRESET 2 - CLEAN AUTH (VERIFIED)'
@@ -363,9 +298,7 @@ export default function App() {
             break
           }
         }
-      } catch (err) {
-        // Next
-      }
+      } catch (err) {}
     }
 
     if (resolvedBase) {
@@ -373,7 +306,6 @@ export default function App() {
       setHealthStatus('Online')
       setError(null)
 
-      // Automatic demo login as reviewer
       try {
         const loginRes = await fetchWithTimeout(
           `${resolvedBase}/auth/demo-login`,
@@ -439,40 +371,6 @@ export default function App() {
     }
   }
 
-  // Reset Project
-  const handleResetProject = async (presetId = 'apex-core-2026') => {
-    setIsResetting(true)
-    let resetDone = false
-
-    if (healthStatus === 'Online' && activeApiBase) {
-      try {
-        const res = await fetchWithTimeout(
-          `${activeApiBase}/sample/reset?preset_id=${presetId}`,
-          {
-            method: 'POST',
-            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-          },
-          2000
-        )
-        if (res.ok) {
-          await fetchProjectData(activeApiBase)
-          resetDone = true
-        }
-      } catch (err) {
-        // Fallback
-      }
-    }
-
-    if (!resetDone) {
-      setProject(getPresetData(presetId))
-    }
-
-    setHighlightedSnippet(null)
-    setHighlightedSource(null)
-    setIsResetting(false)
-    showToast('// STATE_RESET: PRESET_INITIALIZED')
-  }
-
   // Toggle Claim Approval
   const handleToggleApprove = async (claimId) => {
     let prevVal = null
@@ -505,7 +403,6 @@ export default function App() {
           showToast(`// CLAIM_${claimId} -> ${result.is_approved ? 'APPROVED' : 'PENDING'}`)
           return
         } else {
-          // Revert optimistic state on 403 or server rejection
           setProject((prev) => {
             if (!prev) return prev
             return {
@@ -520,7 +417,6 @@ export default function App() {
           return
         }
       } catch (err) {
-        // Revert on network exception
         setProject((prev) => {
           if (!prev) return prev
           return {
@@ -569,7 +465,6 @@ export default function App() {
           showToast(!prevVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
           return
         } else {
-          // Revert optimistic state on 403 or rejection
           setProject((prev) => {
             if (!prev) return prev
             return {
@@ -601,7 +496,7 @@ export default function App() {
     showToast(!prevVal ? '// REDACTED_FROM_SUCCESSOR' : '// UNREDACTED')
   }
 
-  // Inline Edit
+  // Inline Edit Statement
   const handleUpdateStatement = async (claimId, newStatement) => {
     setProject((prev) => {
       if (!prev) return prev
@@ -627,9 +522,7 @@ export default function App() {
           },
           1500
         )
-      } catch (err) {
-        // Handled
-      }
+      } catch (err) {}
     }
 
     showToast(`// CLAIM_${claimId}_STATEMENT_UPDATED`)
@@ -678,7 +571,7 @@ export default function App() {
     showToast('// ALL_CLAIMS_APPROVED_FOR_HANDOVER')
   }
 
-  // Resolve Conflict Handler (Outcome C)
+  // Resolve Conflict Handler
   const handleResolveConflict = async (conflictId, payload) => {
     if (healthStatus === 'Online' && activeApiBase && project) {
       try {
@@ -724,7 +617,7 @@ export default function App() {
     showToast('// CONFLICT_RESOLVED_STANDALONE')
   }
 
-  // Update Successor Checklist Task (Outcome F)
+  // Update Successor Checklist Task
   const handleUpdateChecklistTask = async (taskKey, nextStatus) => {
     if (healthStatus === 'Online' && activeApiBase && project) {
       try {
@@ -779,28 +672,9 @@ export default function App() {
 
   // Inspect Evidence
   const handleInspectEvidence = (evidence) => {
-    if (!evidence || !project || !project.raw_sources) return
-
-    const sourceName = evidence.source_name
-    const targetIdx = project.raw_sources.findIndex(
-      (s) =>
-        s.filename === sourceName ||
-        s.filename.includes(sourceName) ||
-        sourceName.includes(s.filename)
-    )
-
-    if (targetIdx !== -1) {
-      setActiveSourceIndex(targetIdx)
-    }
-
-    setHighlightedSnippet(evidence.snippet)
-    setHighlightedSource(evidence.source_name)
-    showToast(`// CITATION_ANCHORED: ${evidence.source_name}`)
-  }
-
-  const handleClearHighlight = () => {
-    setHighlightedSnippet(null)
-    setHighlightedSource(null)
+    if (!evidence) return
+    setActiveTab('evidence')
+    showToast(`// CITATION_ANCHORED: ${evidence.source_name || 'Document'}`)
   }
 
   // Export Markdown
@@ -811,24 +685,30 @@ export default function App() {
     )
     const content = generateHandoverMarkdown(project, approvedOnly)
     downloadMarkdownFile(
-      `${project.project_id || 'apex'}-handover-brief.md`,
+      `${project.project_id || 'codefrontier'}-handover-brief.md`,
       content
     )
     showToast('// EXPORT_COMPLETE: BRIEF (.MD) DOWNLOADED')
   }
 
-  // Export Machine-Readable JSON Audit Trail
+  // Export JSON
   const handleExportJson = () => {
     if (!project) return
     const auditData = generateHandoverAuditJson(project, project.claims)
     downloadJsonFile(
-      `${project.project_id || 'apex'}-handover-audit.json`,
+      `${project.project_id || 'codefrontier'}-handover-audit.json`,
       auditData
     )
     showToast('// EXPORT_COMPLETE: AUDIT (.JSON) DOWNLOADED')
   }
 
-  // Audit Stats
+  // Unresolved conflict count
+  const unresolvedConflictCount = useMemo(() => {
+    if (!project || !project.conflicts) return 0
+    return project.conflicts.filter((c) => c.status === 'unresolved').length
+  }, [project])
+
+  // Stats
   const stats = useMemo(() => {
     if (!project || !project.claims) {
       return { total: 0, approved: 0, pending: 0, conflicts: 0, sensitive: 0 }
@@ -841,36 +721,6 @@ export default function App() {
     return { total, approved, pending, conflicts, sensitive }
   }, [project])
 
-  // Unresolved conflict count for badges & alerts
-  const unresolvedConflictCount = useMemo(() => {
-    if (!project || !project.conflicts) return 0
-    return project.conflicts.filter((c) => c.status === 'unresolved').length
-  }, [project])
-
-  // Filtered claims with search
-  const filteredClaims = useMemo(() => {
-    if (!project || !project.claims) return []
-    return project.claims.filter((c) => {
-      // Search query filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase()
-        const matchesStatement = c.statement?.toLowerCase().includes(query)
-        const matchesExcerpt = c.exact_source_excerpt?.toLowerCase().includes(query)
-        const matchesSource = c.source_filename?.toLowerCase().includes(query)
-        if (!matchesStatement && !matchesExcerpt && !matchesSource) return false
-      }
-
-      if (selectedCategoryFilter === 'all') return true
-      if (selectedCategoryFilter === 'approved') return c.is_approved
-      if (selectedCategoryFilter === 'conflicts') return c.status === 'conflicting'
-      if (selectedCategoryFilter === 'pending') return !c.is_approved
-      if (selectedCategoryFilter === 'sensitive') return c.is_sensitive
-      if (selectedCategoryFilter === 'supported') return c.validation_status === 'supported'
-      if (selectedCategoryFilter === 'needs_review') return c.validation_status === 'needs_human_review'
-      return c.category === selectedCategoryFilter
-    })
-  }, [project, selectedCategoryFilter, searchQuery])
-
   // Successor claims (approved & non-sensitive)
   const successorClaims = useMemo(() => {
     if (!project || !project.claims) return []
@@ -878,350 +728,216 @@ export default function App() {
   }, [project])
 
   return (
-    <div className="min-h-screen bg-[#000000] text-neutral-200 flex flex-col font-sans selection:bg-[#00f0ff]/30 selection:text-[#00f0ff] relative overflow-x-hidden at-grid-bg">
-      {/* Glow Aura */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div
-          className="absolute -top-[15%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[150px] animate-at-aura"
-          style={{
-            background: 'radial-gradient(circle, rgba(255, 0, 127, 0.12) 0%, transparent 65%)',
-          }}
+    <div className="flex h-screen bg-[#070a12] text-slate-100 overflow-hidden font-body select-none">
+      {/* 1. Left Collapsible Enterprise Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        project={project}
+        stats={stats}
+        unresolvedConflictCount={unresolvedConflictCount}
+        currentUser={currentUser}
+        onSwitchUserRole={handleSwitchUserRole}
+        onSelectPreset={handleSelectPreset}
+        onStartTour={handleStartTour}
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={setIsSidebarCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
+
+      {/* 2. Main Right Container */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Header */}
+        <Header
+          project={project}
+          activeTab={activeTab}
+          healthStatus={healthStatus}
+          currentUser={currentUser}
+          onOpenIngest={() => setActiveTab('documents')}
+          onStartTour={handleStartTour}
+          onExportMarkdown={handleExportMarkdown}
+          onExportJson={handleExportJson}
+          onRetryBackend={() => initBackend(false)}
+          isConnectingBackend={isConnectingBackend}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setMobileOpen={setMobileOpen}
         />
-        <div
-          className="absolute top-[18%] -left-[12%] w-[55vw] h-[55vw] rounded-full blur-[150px] animate-at-aura"
-          style={{
-            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 60%)',
-            animationDelay: '6s',
-          }}
-        />
+
+        {/* Scrollable Main Content Surface */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 cf-grid-pattern">
+          {/* Loading Indicator */}
+          {loading && !project && (
+            <div className="py-28 text-center text-slate-400 font-mono text-xs space-y-3">
+              <div className="inline-block animate-spin w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full" />
+              <p className="tracking-widest uppercase text-slate-400">
+                // INITIALIZING CODEFRONTIER TRANSITION ENGINE...
+              </p>
+            </div>
+          )}
+
+          {/* Error Notice */}
+          {error && (
+            <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs font-mono flex items-center justify-between gap-3 shadow-sm mb-6">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>// RUNTIME NOTICE: {error}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="px-2.5 py-1 rounded bg-black/60 border border-white/10 text-[10px] text-slate-300 hover:text-white"
+              >
+                DISMISS
+              </button>
+            </div>
+          )}
+
+          {/* Active Workspace by Tab */}
+          {project && (
+            <>
+              {/* SCREEN 1: Command Center */}
+              {activeTab === 'command_center' && (
+                <CommandCenter
+                  project={project}
+                  stats={stats}
+                  onNavigateTab={(tab) => {
+                    if (tab === 'successor') handleSwitchUserRole('incoming_successor')
+                    setActiveTab(tab)
+                  }}
+                  onOpenConflictModal={(conf) => setActiveConflict(conf)}
+                  onLockHandover={() => setIsLockModalOpen(true)}
+                  currentUser={currentUser}
+                  activeApiBase={activeApiBase}
+                  authToken={authToken}
+                />
+              )}
+
+              {/* SCREEN 2: Documents & Ingestion */}
+              {activeTab === 'documents' && (
+                <DocumentsWorkspace
+                  project={project}
+                  onUploadFiles={handleUploadFiles}
+                  onIngestCustomText={handleIngestCustomText}
+                  isReviewer={currentUser?.role === 'project_reviewer'}
+                  onInspectEvidence={(ev) => {
+                    handleInspectEvidence(ev)
+                    setActiveTab('evidence')
+                  }}
+                />
+              )}
+
+              {/* SCREEN 3: Evidence Explorer */}
+              {activeTab === 'evidence' && (
+                <EvidenceExplorer
+                  project={project}
+                  claims={project.claims || []}
+                  rawSources={project.raw_sources || []}
+                  onToggleApprove={handleToggleApprove}
+                  onToggleSensitive={handleToggleSensitive}
+                  onUpdateStatement={handleUpdateStatement}
+                  onApproveAll={handleApproveAll}
+                  onInspectEvidence={handleInspectEvidence}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  isReviewer={currentUser?.role === 'project_reviewer'}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                />
+              )}
+
+              {/* SCREEN 4: Conflict Lab */}
+              {activeTab === 'conflicts' && (
+                <ConflictLab
+                  conflicts={project.conflicts || []}
+                  onResolveConflict={handleResolveConflict}
+                  onInspectEvidence={(ev) => {
+                    handleInspectEvidence(ev)
+                    setActiveTab('evidence')
+                  }}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  isReviewer={currentUser?.role === 'project_reviewer'}
+                  currentUser={currentUser}
+                />
+              )}
+
+              {/* SCREEN 5: Review & Approvals */}
+              {activeTab === 'review' && (
+                <ReviewApprovals
+                  project={project}
+                  claims={project.claims || []}
+                  onToggleApprove={handleToggleApprove}
+                  onToggleSensitive={handleToggleSensitive}
+                  onUpdateStatement={handleUpdateStatement}
+                  onApproveAll={handleApproveAll}
+                  onLockHandover={() => setIsLockModalOpen(true)}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  currentUser={currentUser}
+                  activeApiBase={activeApiBase}
+                  authToken={authToken}
+                />
+              )}
+
+              {/* SCREEN 6: Trust & Security */}
+              {activeTab === 'security' && (
+                <TrustSecurity
+                  project={project}
+                  claims={project.claims || []}
+                  currentUser={currentUser}
+                  onToggleSensitive={handleToggleSensitive}
+                  onSwitchUserRole={handleSwitchUserRole}
+                  isReviewer={currentUser?.role === 'project_reviewer'}
+                />
+              )}
+
+              {/* SCREEN 7: Successor Workspace */}
+              {activeTab === 'successor' && (
+                <SuccessorWorkspace
+                  project={project}
+                  approvedClaims={successorClaims}
+                  checklist={project.checklist || []}
+                  onUpdateChecklistTask={handleUpdateChecklistTask}
+                  onExportMarkdown={handleExportMarkdown}
+                  onExportJson={handleExportJson}
+                  onInspectEvidence={(ev) => {
+                    handleInspectEvidence(ev)
+                    setActiveTab('evidence')
+                  }}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                />
+              )}
+
+              {/* SCREEN 8: Audit History */}
+              {activeTab === 'audit' && (
+                <AuditHistory
+                  project={project}
+                  activeApiBase={activeApiBase}
+                  authToken={authToken}
+                  currentUser={currentUser}
+                />
+              )}
+            </>
+          )}
+        </main>
       </div>
 
       {/* Floating Telemetry Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-black/90 backdrop-blur-2xl border border-cyan-400/40 text-cyan-300 text-xs px-4 py-2.5 rounded-lg shadow-[0_0_20px_rgba(0,240,255,0.25)] flex items-center gap-2.5 font-mono animate-fade-in tracking-wider">
-          <span className="w-1.5 h-1.5 bg-[#00f0ff] animate-ping" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0c101c]/95 border border-cyan-500/40 text-cyan-300 text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2.5 font-mono animate-fade-in tracking-wider">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Screen 1: Landing Hero & Team Showcase */}
-      {viewMode === 'landing' ? (
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <LandingHero
-            onLaunchDemo={handleLaunchDemo}
-            onCustomInput={handleCustomInput}
-            onOpenTeamDossier={() => setIsPortfolioOpen(true)}
-          />
-        </div>
-      ) : (
-        /* Screen 2: Handover Studio */
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <Header
-            project={project}
-            healthStatus={healthStatus}
-            role={role}
-            setRole={(newRole) => {
-              setRole(newRole)
-              if (newRole === 'successor') {
-                setActiveTab('successor')
-              } else if (activeTab === 'successor') {
-                setActiveTab('overview')
-              }
-            }}
-            currentUser={currentUser}
-            onSwitchUserRole={handleSwitchUserRole}
-            onResetProject={handleResetProject}
-            onSelectPreset={handleSelectPreset}
-            onLockHandover={() => setIsLockModalOpen(true)}
-            onExportMarkdown={handleExportMarkdown}
-            onExportJson={handleExportJson}
-            onOpenPortfolio={() => setIsPortfolioOpen(true)}
-            onBackToLanding={handleBackToLanding}
-            onOpenIngest={() => setActiveTab('ingest')}
-            onStartTour={handleStartTour}
-            onRetryBackend={() => initBackend(false)}
-            isConnectingBackend={isConnectingBackend}
-            stats={stats}
-            isResetting={isResetting}
-          />
-
-          <NavigationTabBar
-            activeTab={activeTab}
-            setActiveTab={(tab) => {
-              setActiveTab(tab)
-              if (tab === 'successor') {
-                setRole('successor')
-                if (currentUser?.role !== 'incoming_successor') {
-                  handleSwitchUserRole('incoming_successor')
-                }
-              } else {
-                setRole('lead')
-                if (currentUser?.role === 'incoming_successor') {
-                  handleSwitchUserRole('project_reviewer')
-                }
-              }
-            }}
-            stats={stats}
-            unresolvedConflictCount={unresolvedConflictCount}
-            onStartTour={handleStartTour}
-            currentUserRole={currentUser?.role || (role === 'lead' ? 'project_reviewer' : 'incoming_successor')}
-          />
-
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-            {/* Loading Indicator */}
-            {loading && !project && (
-              <div className="py-28 text-center text-neutral-500 space-y-3 font-mono">
-                <div className="inline-block animate-spin w-8 h-8 border-2 border-cyan-400 border-t-transparent shadow-[0_0_15px_#00f0ff]" />
-                <p className="text-[11px] tracking-[0.25em] uppercase text-neutral-400">
-                  // INITIALIZING APEX TRANSITION ENGINE & DATASETS...
-                </p>
-              </div>
-            )}
-
-            {/* Error Notice */}
-            {error && (
-              <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs font-mono flex items-center justify-between gap-3 shadow-lg">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>// RUNTIME_NOTICE: {error}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setError(null)}
-                  className="px-2.5 py-1 rounded bg-black/70 border border-white/10 hover:border-white/30 text-[10px] text-neutral-300 transition"
-                >
-                  DISMISS
-                </button>
-              </div>
-            )}
-
-            {/* Workspace Content by Screen Tab */}
-            {project && (
-              <>
-                {/* 1. OVERVIEW DASHBOARD */}
-                {activeTab === 'overview' && (
-                  <OverviewDashboard
-                    project={project}
-                    stats={stats}
-                    onNavigateTab={(tab) => {
-                      if (tab === 'successor') {
-                        setRole('successor')
-                        handleSwitchUserRole('incoming_successor')
-                      } else {
-                        setRole('lead')
-                      }
-                      setActiveTab(tab)
-                    }}
-                    onOpenConflictModal={(conf) => setActiveConflict(conf)}
-                    onLockHandover={() => setIsLockModalOpen(true)}
-                    currentUser={currentUser}
-                  />
-                )}
-
-                {/* 2. EVIDENCE EXPLORER */}
-                {activeTab === 'evidence' && (
-                  <div className="space-y-6">
-                    <BentoMetricsBar
-                      stats={stats}
-                      selectedCategoryFilter={selectedCategoryFilter}
-                      onSelectFilter={(filterId) => setSelectedCategoryFilter(filterId)}
-                    />
-
-                    {/* Evidence Header Banner */}
-                    <div className="p-4 sm:p-5 rounded-xl bg-[#0c0d14]/80 backdrop-blur-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
-                        <span className="font-bold uppercase tracking-wider">// EVIDENCE CITATION LEDGER:</span>
-                        <span className="text-neutral-400 font-normal">
-                          Click any citation snippet to anchor exact line ranges and original artifact provenance.
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={handleApproveAll}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 text-xs font-mono tracking-wider uppercase font-bold transition"
-                        >
-                          <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Batch Approve</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Two-Column Split Workspace */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                      {/* Left: Source Artifacts Viewer (5 cols) */}
-                      <div className="lg:col-span-5 h-[800px] sticky top-40">
-                        <SourceViewer
-                          rawSources={project.raw_sources}
-                          activeSourceIndex={activeSourceIndex}
-                          setActiveSourceIndex={setActiveSourceIndex}
-                          highlightedSnippet={highlightedSnippet}
-                          highlightedSource={highlightedSource}
-                          onClearHighlight={handleClearHighlight}
-                        />
-                      </div>
-
-                      {/* Right: Claims Stream & Triage (7 cols) */}
-                      <div className="lg:col-span-7 space-y-4">
-                        {/* Search and Filters */}
-                        <div className="bg-[#0c0d14]/80 backdrop-blur-xl p-3 rounded-xl border border-white/10 space-y-2.5 shadow-md">
-                          <div className="relative">
-                            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="Search claims, excerpts, or document filenames..."
-                              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none placeholder:text-neutral-600"
-                            />
-                            {searchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs"
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 font-mono text-xs tracking-wider">
-                            <span className="text-neutral-500 px-1 uppercase text-[10px] font-bold">
-                              // FILTER:
-                            </span>
-
-                            {[
-                              { id: 'all', label: `ALL (${project.claims?.length || 0})` },
-                              { id: 'supported', label: 'SUPPORTED' },
-                              { id: 'needs_review', label: 'NEEDS_REVIEW' },
-                              { id: 'conflicts', label: `CONFLICTS (${stats.conflicts})` },
-                              { id: 'pending', label: `PENDING (${stats.pending})` },
-                              { id: 'sensitive', label: `REDACTED (${stats.sensitive})` },
-                            ].map((tab) => (
-                              <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setSelectedCategoryFilter(tab.id)}
-                                className={`px-2.5 py-1 rounded-lg font-bold uppercase transition shrink-0 text-[11px] ${
-                                  selectedCategoryFilter === tab.id
-                                    ? 'bg-[#00f0ff]/15 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]'
-                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.04]'
-                                }`}
-                              >
-                                {tab.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Claims List */}
-                        <div className="space-y-4">
-                          {filteredClaims.length === 0 ? (
-                            <div className="p-16 rounded-2xl bg-[#0c0d14]/50 border border-white/5 text-center text-neutral-500 text-xs font-mono tracking-widest uppercase">
-                              // NO_MATCHING_CLAIMS_FOR_CRITERIA
-                            </div>
-                          ) : (
-                            filteredClaims.map((claim) => (
-                              <ClaimCard
-                                key={claim.id}
-                                claim={claim}
-                                isReviewer={role === 'lead'}
-                                onToggleApprove={handleToggleApprove}
-                                onToggleSensitive={handleToggleSensitive}
-                                onUpdateStatement={handleUpdateStatement}
-                                onInspectEvidence={handleInspectEvidence}
-                                onOpenConflictModal={() => {
-                                  const conf = (project.conflicts || []).find(
-                                    (c) => c.claim_id_1 === claim.id || c.claim_id_2 === claim.id
-                                  )
-                                  if (conf) setActiveConflict(conf)
-                                }}
-                              />
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. CONFLICT RESOLUTION WORKSPACE */}
-                {activeTab === 'conflicts' && (
-                  <ConflictWorkspace
-                    conflicts={project.conflicts || []}
-                    onResolveConflict={handleResolveConflict}
-                    onInspectEvidence={(ev) => {
-                      handleInspectEvidence(ev)
-                      setActiveTab('evidence')
-                    }}
-                    isReviewer={role === 'lead'}
-                    currentUser={currentUser}
-                  />
-                )}
-
-                {/* 4. INGESTION WORKSPACE */}
-                {activeTab === 'ingest' && (
-                  <IngestionWorkspace
-                    project={project}
-                    onUploadFiles={handleUploadFiles}
-                    onIngestCustomText={handleIngestCustomText}
-                    isReviewer={role === 'lead'}
-                    onInspectEvidence={(ev) => {
-                      handleInspectEvidence(ev)
-                      setActiveTab('evidence')
-                    }}
-                  />
-                )}
-
-                {/* 5. REVIEWER & LIVE AUDIT WORKSPACE */}
-                {activeTab === 'audit' && (
-                  <ReviewerAuditWorkspace
-                    project={project}
-                    claims={project.claims || []}
-                    onToggleApprove={handleToggleApprove}
-                    onToggleSensitive={handleToggleSensitive}
-                    onUpdateStatement={handleUpdateStatement}
-                    onApproveAll={handleApproveAll}
-                    onLockHandover={() => setIsLockModalOpen(true)}
-                    currentUser={currentUser}
-                    activeApiBase={activeApiBase}
-                    authToken={authToken}
-                  />
-                )}
-
-                {/* 6. SUCCESSOR SANITIZED DASHBOARD & CHECKLIST */}
-                {activeTab === 'successor' && (
-                  <SuccessorView
-                    project={project}
-                    approvedClaims={successorClaims}
-                    checklist={project.checklist || []}
-                    onUpdateChecklistTask={handleUpdateChecklistTask}
-                    onExportMarkdown={handleExportMarkdown}
-                    onExportJson={handleExportJson}
-                    onInspectEvidence={(ev) => {
-                      handleInspectEvidence(ev)
-                      setActiveTab('evidence')
-                    }}
-                    onOpenConflictModal={(conf) => setActiveConflict(conf)}
-                  />
-                )}
-              </>
-            )}
-          </main>
-        </div>
-      )}
-
-      {/* Side-by-Side Conflict Resolution Modal */}
+      {/* Modals */}
       <ConflictModal
         isOpen={!!activeConflict}
         conflict={activeConflict}
         onClose={() => setActiveConflict(null)}
         onResolveConflict={handleResolveConflict}
-        isReviewer={role === 'lead'}
+        isReviewer={currentUser?.role === 'project_reviewer'}
       />
 
-      {/* Lock Handover Modal */}
       <FinalizeModal
         isOpen={isLockModalOpen}
         onClose={() => setIsLockModalOpen(false)}
@@ -1229,7 +945,6 @@ export default function App() {
         project={project}
         onLockAndSwitch={async () => {
           setIsLockModalOpen(false)
-          // Reviewer locks handover
           if (healthStatus === 'Online' && activeApiBase && project) {
             try {
               const res = await fetchWithTimeout(
@@ -1249,11 +964,10 @@ export default function App() {
                 showToast(`// LOCK_REJECTED: ${err.detail || 'Error'}`)
                 return
               }
-            } catch (err) {
-              // Fallback
-            }
+            } catch (err) {}
           }
-          setRole('successor')
+          await handleSwitchUserRole('incoming_successor')
+          setActiveTab('successor')
           showToast('// HANDOVER_APPROVED_&_LOCKED -> SUCCESSOR_VIEW')
         }}
         onExportMarkdown={() => {
@@ -1269,14 +983,6 @@ export default function App() {
       <TeamPortfolio
         isOpen={isPortfolioOpen}
         onClose={() => setIsPortfolioOpen(false)}
-      />
-
-      <CustomIngestModal
-        isOpen={isIngestModalOpen}
-        onClose={() => setIsIngestModalOpen(false)}
-        onIngestCustomText={handleIngestCustomText}
-        onUploadFiles={handleUploadFiles}
-        projectId={project?.project_id || 'apex-core-2026'}
       />
 
       <JudgeTourModal
