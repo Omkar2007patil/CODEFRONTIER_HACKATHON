@@ -1,6 +1,6 @@
 {
   "active_id": "apex-core-2026",
-  "updated_at": "2026-11-15T05:26:43.506763+00:00",
+  "updated_at": "2026-11-15T05:43:08.156288+00:00",
   "projects": {
     "apex-auth-clean": {
       "project_id": "apex-auth-clean",
@@ -10,7 +10,7 @@
       "summary": "Sarah Lin is handing over the Apex Central Auth & Identity microservice to Devika Nair. All architectural decisions are benchmarked, JWT token signing is verified, zero blocking incidents exist on staging, and day-one continuation tasks are fully scoped.",
       "status": "approved",
       "approved_by": "reviewer@apex.dev",
-      "approved_at": "2026-11-15T05:26:41.538095+00:00",
+      "approved_at": "2026-11-15T05:43:06.707408+00:00",
       "created_at": null,
       "updated_at": null,
       "raw_sources": [
@@ -316,16 +316,16 @@
           "content": "Sprint 44 Task Board & Milestones\nSprint Cycle: Oct 30 - Nov 15\nTarget Milestone: Phase 2 Public Beta Launch\n\nTasks:\n- [IN PROGRESS] Database migration scripts execution (APEX-398)\n  - Verify PostgreSQL schema matches migration scripts on staging instance.\n- [BLOCKED] Staging cache timeout debugging (APEX-412) - Unassigned\n- [PLANNED] Launch Schedule:\n  - Sprint review & final QA sign-off: Nov 14, 2026.\n  - Production Launch scheduled for Nov 15, 2026 (Note: Team lead announced public launch on Nov 15, despite API freeze target in ADR-004)."
         },
         {
-          "id": "doc-f902a1",
-          "filename": "notes_c8231e.txt",
+          "id": "doc-060b18",
+          "filename": "notes_7eb7de.txt",
           "file_type": "text",
-          "content": "Decision: Kafka selected for streaming events c8231e.",
+          "content": "Decision: Kafka selected for streaming events 7eb7de.",
           "sections": [
             {
               "section_id": "sec-txt-l1",
-              "filename": "notes_c8231e.txt",
+              "filename": "notes_7eb7de.txt",
               "heading": "Overview / Notes",
-              "content": "Decision: Kafka selected for streaming events c8231e.",
+              "content": "Decision: Kafka selected for streaming events 7eb7de.",
               "location_type": "line",
               "location_ref": "Line 1-1 (Overview / Notes)",
               "start_index": 1,
@@ -334,16 +334,16 @@
           ]
         },
         {
-          "id": "doc-b2d75c",
-          "filename": "tasks_c8231e.csv",
+          "id": "doc-aa23a8",
+          "filename": "tasks_7eb7de.csv",
           "file_type": "csv",
-          "content": "Header: Task, Status\nRow 2: Task: APEX-c8231e, Status: Completed",
+          "content": "Header: Task, Status\nRow 2: Task: APEX-7eb7de, Status: Completed",
           "sections": [
             {
               "section_id": "sec-csv-r2",
-              "filename": "tasks_c8231e.csv",
+              "filename": "tasks_7eb7de.csv",
               "heading": "Row 2",
-              "content": "Task: APEX-c8231e, Status: Completed",
+              "content": "Task: APEX-7eb7de, Status: Completed",
               "location_type": "row",
               "location_ref": "Row 2",
               "start_index": 2,
@@ -530,7 +530,7 @@
       ],
       "conflicts": [
         {
-          "id": "conf-1f15b3",
+          "id": "conf-d61c57",
           "project_id": "apex-core-2026",
           "conflict_type": "dates_deadlines",
           "claim_id_1": "claim-3",
@@ -598,8 +598,8 @@
           "resolution_choice": "accept_claim_1",
           "rationale": "Product team confirmed API freeze milestone on Nov 10 governs. Launch moved to Nov 22 to permit staging hardening.",
           "resolved_by": "reviewer@apex.dev",
-          "resolved_at": "2026-11-15T05:26:42.174621+00:00",
-          "created_at": "2026-11-15T05:26:42.013572+00:00"
+          "resolved_at": "2026-11-15T05:43:07.137589+00:00",
+          "created_at": "2026-11-15T05:43:07.040398+00:00"
         }
       ],
       "checklist": [
@@ -612,7 +612,7 @@
           "category": "orientation",
           "status": "completed",
           "completed_by": "successor@apex.dev",
-          "completed_at": "2026-11-15T05:26:40.860513+00:00",
+          "completed_at": "2026-11-15T05:43:06.118808+00:00",
           "notes": "Reviewed ADRs and departure brief with team lead.",
           "sort_order": 1,
           "created_at": "2026-11-14T18:41:49.557971+00:00"
@@ -640,7 +640,7 @@
           "category": "planning",
           "status": "completed",
           "completed_by": "successor@apex.dev",
-          "completed_at": "2026-11-15T05:26:41.804116+00:00",
+          "completed_at": "2026-11-15T05:43:06.927584+00:00",
           "notes": "Milestone confirmed for testing.",
           "sort_order": 3,
           "created_at": "2026-11-14T18:41:49.557971+00:00"
